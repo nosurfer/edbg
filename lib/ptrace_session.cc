@@ -1,6 +1,7 @@
 #include "ptrace_configure.h"
 #include "ptrace_session.h"
 
+// constructor
 PtraceSession::PtraceSession(pid_t pid)
     : pid_(pid), attached_(false)
 {
@@ -8,6 +9,7 @@ PtraceSession::PtraceSession(pid_t pid)
   attached_ = true;
 }
 
+// destructor
 PtraceSession::~PtraceSession() noexcept
 {
   if (attached_) {

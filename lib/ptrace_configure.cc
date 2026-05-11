@@ -13,14 +13,18 @@ void
 ptrace_attach(pid_t pid)
 {
   pid_t status = 0;
-  errno = 0;
+  errno = 0; // zeroed errno to check it in future
 
   long res = ptrace(PTRACE_ATTACH, pid, nullptr, nullptr);
   if (res == -1 && errno != 0) {
+    // sanity check of ptrace result and errno value (if error actually occured) 
     int saved_errno = errno;
     throw std::system_error(
         saved_errno,
         std::generic_category(),
+        // this function return a reference to an error_category object
+        // used to indentify error conditions that correspond to errno codes
+        // that object have a lot of methods
         "PTRACE_ATTACH failed"
     );
   }
@@ -36,6 +40,7 @@ ptrace_attach(pid_t pid)
   }
 
   if (!WIFSTOPPED(status)) {
+    // sanity check that traced process has stoped
     throw std::runtime_error("process didn't stop after attaching");
   }
 }

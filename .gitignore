@@ -1,3 +1,4 @@
 obj/*
+include/spdlog/*
 
 edbg

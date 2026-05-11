@@ -2,19 +2,20 @@
 # make run   - build and run
 # make clean - remove build setup
 
-CC       := g++
-CFLAGS   := -Wall -Wextra -O3 -Iinclude
-LDFLAGS  :=
+CC      := g++
+CFLAGS  := -Wall -Wextra -O3 -Iinclude -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+LDFLAGS :=
+LOGS    := err
 
-SRC_DIR  := src
-OBJ_DIR  := obj
-BIN_DIR  := $(CURDIR)
-TARGET   := $(BIN_DIR)/edbg
+SRC_DIR := src
+OBJ_DIR := obj
+BIN_DIR := $(CURDIR)
+TARGET  := $(BIN_DIR)/edbg
 
 # explicity wildcard keyword used for formating works
-SRCS     := $(wildcard $(SRC_DIR)/*.cc)
+SRCS    := $(wildcard $(SRC_DIR)/*.cc)
 # syntax for convert SRCS list with .cc extensions to .o extensions 
-OBJS     := $(SRCS:$(SRC_DIR)/%.cc=$(OBJ_DIR)/%.o)
+OBJS    := $(SRCS:$(SRC_DIR)/%.cc=$(OBJ_DIR)/%.o)
 
 all: $(TARGET)
 # $^ expression means taking entirely list to command
@@ -26,15 +27,20 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | $(OBJ_DIR)
 # create OBJ_DIR only if it doesn't exist
 $(OBJ_DIR):
 	mkdir -p $@
-# MAKECMDGOALS includes argvs, filter-out exclude argv[0]
-RUN_ARGS := $(filter-out run,$(MAKECMDGOALS))
-run: all
-	$(TARGET) $(RUN_ARGS)
-# pass through next argvs without getting warns
-%:
-	@:
+
+spdlog:
+	rm -rf /tmp/spdlog_tmp
+	git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
+	git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
+	mkdir -p include
+	rm -rf include/spdlog
+	cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
+	rm -rf /tmp/spdlog_tmp
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)
 
-.PHONY: all clean run
+rm: clean
+	rm -rf include/spdlog
+
+.PHONY: all clean run spdlog

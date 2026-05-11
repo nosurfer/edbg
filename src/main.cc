@@ -1,3 +1,6 @@
+#include "spdlog/cfg/env.h"
+#include "spdlog/spdlog.h"
+
 #include "ptrace_session.h"
 
 #include <cstdlib>
@@ -6,6 +9,15 @@
 int
 main(int argc, char *argv[])
 {
+  spdlog::cfg::load_env_levels();
+
+  SPDLOG_TRACE("Entering main()");
+  SPDLOG_DEBUG("argc = {}", argc);
+  SPDLOG_INFO("Program started");
+  SPDLOG_WARN("No config file found, using defaults");
+  SPDLOG_ERROR("Failed to open file: {}", "data.txt");
+  SPDLOG_CRITICAL("Fatal error, exiting");
+  
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <pid>" << std::endl;
   }

@@ -1,6 +1,6 @@
 # make       - build
-# make run   - build and run
 # make clean - remove build setup
+# make rm    - remove build setup and spdlog lib
 
 CC      := g++
 CFLAGS  := -Wall -Wextra -O3 -Iinclude -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
@@ -28,14 +28,14 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | $(OBJ_DIR)
 $(OBJ_DIR):
 	mkdir -p $@
 
-spdlog:
-	rm -rf /tmp/spdlog_tmp
-	git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
-	git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
-	mkdir -p include
-	rm -rf include/spdlog
-	cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
-	rm -rf /tmp/spdlog_tmp
+pull:
+	@rm -rf /tmp/spdlog_tmp
+	@git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
+	@git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
+	@mkdir -p include
+	@rm -rf include/spdlog
+	@cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
+	@rm -rf /tmp/spdlog_tmp
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)

@@ -16,12 +16,6 @@ main(int argc, char *argv[])
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <pid>" << std::endl;
   }
-
-  /* todo
-   * [x] add logs (extern lib)
-   * [ ] more comments everywhere...
-   * [ ] breakpoint handler
-   * [ ] temporary makefile */
   
   return 0;
 }

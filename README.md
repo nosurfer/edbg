@@ -9,6 +9,11 @@ make
 ./edbg
 ```
 
+## To complete
+
+- [ ] ptrace_run func
+- [ ] wrappers.cc
+
 ## Todo
 
 - [ ] more comments everywhere...

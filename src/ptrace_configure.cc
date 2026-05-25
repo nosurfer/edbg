@@ -1,13 +1,16 @@
 #include "ptrace_configure.h"
 
 #include <cerrno>
-#include <stdlib.h>
-
+#include <string>
 #include <stdexcept>
 #include <system_error>
 
 #include <sys/ptrace.h>
+#include <sys/types.h>
 #include <sys/wait.h>
+
+#include <stdlib.h>
+#include <unistd.h>
 
 void
 ptrace_attach(pid_t pid)
@@ -45,6 +48,38 @@ ptrace_attach(pid_t pid)
   }
 }
 
+pid_t
+ptrace_run(std::string pathname)
+{
+  // write wrappers for child process
+  pid_t pid, status;
+  pid = fork();
+
+  if (pid == 0) {
+    ptrace(PTRACE_TRACEME, 0, nullptr, nullptr);
+    execl(pathname.c_str(), pathname.c_str(), (char*)nullptr);
+    // If the current program is being ptraced, a SIGTRAP
+    // signal is sent to it after a successful execve().
+  }
+  
+  status = waitpid(pid, &status, 0);
+  if (status == -1) {
+    int saved_errno = errno;
+    throw std::system_error(
+        saved_errno,
+        std::generic_category(),
+        "WAITPID failed"
+    );
+  }
+
+  if (!WIFSTOPPED(status)) {
+    // sanity check that traced process has stoped
+    throw std::runtime_error("process didn't stop after attaching");
+  }
+
+  return pid;
+}
+
 void
 ptrace_detach(pid_t pid)
 {
@@ -60,8 +95,3 @@ ptrace_detach(pid_t pid)
     );
   }
 }
-
-
-
-
-

@@ -11,8 +11,7 @@ make
 
 ## To complete
 
-- [ ] ptrace_run func
-- [ ] wrappers.cc
+- [X] ptrace_fork func
 
 ## Todo
 

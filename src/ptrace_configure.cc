@@ -15,7 +15,8 @@
 void
 ptrace_attach(pid_t pid)
 {
-  pid_t status = 0;
+  int status = 0;
+  pid_t result;
   errno = 0; // zeroed errno to check it in future
 
   long res = ptrace(PTRACE_ATTACH, pid, nullptr, nullptr);
@@ -32,8 +33,8 @@ ptrace_attach(pid_t pid)
     );
   }
 
-  status = waitpid(pid, &status, 0);
-  if (status == -1) {
+  result = waitpid(pid, &status, 0);
+  if (result == -1) {
     int saved_errno = errno;
     throw std::system_error(
         saved_errno,
@@ -49,10 +50,10 @@ ptrace_attach(pid_t pid)
 }
 
 pid_t
-ptrace_run(std::string pathname)
+ptrace_fork(const std::string& pathname)
 {
-  // write wrappers for child process
-  pid_t pid, status;
+  pid_t pid, result;
+  int status = 0;
   pid = fork();
 
   if (pid == 0) {
@@ -62,8 +63,8 @@ ptrace_run(std::string pathname)
     // signal is sent to it after a successful execve().
   }
   
-  status = waitpid(pid, &status, 0);
-  if (status == -1) {
+  result = waitpid(pid, &status, 0);
+  if (result == -1) {
     int saved_errno = errno;
     throw std::system_error(
         saved_errno,

@@ -9,6 +9,12 @@ PtraceSession::PtraceSession(pid_t pid)
   attached_ = true;
 }
 
+PtraceSession::PtraceSession(const std::string& pathname)
+{
+  pid_ = ptrace_fork(pathname);
+  attached_ = true;
+}
+
 // destructor
 PtraceSession::~PtraceSession() noexcept
 {

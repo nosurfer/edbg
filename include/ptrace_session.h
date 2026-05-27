@@ -1,5 +1,6 @@
 #pragma once
 
+#include <string>
 #include <sys/types.h>
 
 class PtraceSession {
@@ -8,6 +9,7 @@ private:
   bool attached_;
 public:
   explicit PtraceSession(pid_t pid);
+  explicit PtraceSession(const std::string& pathname);
   // explicit gurantees that object of class is created only 
   // when you intentionaly call its constructor 
   PtraceSession(const PtraceSession&) = delete; 

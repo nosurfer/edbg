@@ -1,4 +1,5 @@
 obj/*
 include/spdlog/*
 
+compile_commands.json
 edbg

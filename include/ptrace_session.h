@@ -22,5 +22,6 @@ public:
   // prevent from moving constructor with std::move through = operator
   ~PtraceSession() noexcept;
   // noexcept is a specifier used to gurantee a function
-  // will not throw excepctions
+  // will not throw excepctions (not error messages and interrupts)
+  void get_regs(void);
 };

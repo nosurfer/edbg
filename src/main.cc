@@ -20,6 +20,7 @@ main(int argc, char *argv[])
   }
 
   PtraceSession s = PtraceSession(argv[1]);
+  s.get_regs();
   getchar();
   
   return EXIT_SUCCESS;

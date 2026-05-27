@@ -15,6 +15,7 @@ PtraceSession::PtraceSession(pid_t pid)
 
 // yet another constructor
 PtraceSession::PtraceSession(const std::string& pathname)
+    : attached_(false)
 {
   pid_ = ptrace_fork(pathname);
   attached_ = true;

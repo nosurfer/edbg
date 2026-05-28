@@ -1,7 +1,6 @@
 #include "ptrace_configure.h"
 #include "ptrace_session.h"
 
-#include <cstdio>
 #include <iostream>
 #include <sys/user.h>
 

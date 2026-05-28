@@ -14,8 +14,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 
-void
-ptrace_attach(pid_t pid)
+void ptrace_attach(pid_t pid)
 {
   int status = 0;
   pid_t result;
@@ -51,8 +50,7 @@ ptrace_attach(pid_t pid)
   }
 }
 
-pid_t
-ptrace_fork(const std::string& pathname)
+pid_t ptrace_fork(const std::string& pathname)
 {
   pid_t pid, result;
   int status = 0;
@@ -85,8 +83,7 @@ ptrace_fork(const std::string& pathname)
   return pid;
 }
 
-void
-ptrace_detach(pid_t pid)
+void ptrace_detach(pid_t pid)
 {
   errno = 0;
 
@@ -101,8 +98,7 @@ ptrace_detach(pid_t pid)
   }
 }
 
-struct user_regs_struct
-ptrace_getregs(pid_t pid)
+struct user_regs_struct ptrace_getregs(pid_t pid)
 {
   struct user_regs_struct regs;
   errno = 0;

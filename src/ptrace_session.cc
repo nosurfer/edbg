@@ -1,23 +1,45 @@
+// [!] temp include
+#include "dispatcher.cc"
+
 #include "ptrace_configure.h"
 #include "ptrace_session.h"
 
-#include <sys/user.h>
+#include <string>
 #include <print>
+
+#include <sys/user.h>
 
 // constructor
 PtraceSession::PtraceSession(pid_t pid)
-    : pid_(pid), attached_(false)
+    : pid_(pid), attached_(false), dispatcher_(pid_)
 {
   ptrace_attach(pid_);
-  attached_ = true;
+  auto res = dispatcher_.wait();
+
+  if (!res) {
+    std::println(stderr, "wait failed: {}", res.error().message());
+    return;
+  }
+
+  if (dispatcher_.stopped())
+    attached_ = true;
+  else
+    std::println(stderr, "failed attach to the process");
 }
 
 // yet another constructor
 PtraceSession::PtraceSession(const std::string& pathname)
-    : attached_(false)
+    : pid_(ptrace_fork(pathname)), attached_(false), dispatcher_(pid_)
 {
-  pid_ = ptrace_fork(pathname);
-  attached_ = true;
+  auto res = dispatcher_.wait();
+  if (!res) {
+    std::println(stderr, "wait failed: {}", res.error().message());
+    return;
+  }
+  if (dispatcher_.stopped())
+    attached_ = true;
+  else
+    std::println(stderr, "failed attach to the process");
 }
 
 // destructor

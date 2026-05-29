@@ -1,5 +1,7 @@
 #pragma once
 
+#include <dispatcher.cc>
+
 #include <string>
 #include <sys/types.h>
 
@@ -7,6 +9,7 @@ class PtraceSession {
 private:
   pid_t pid_;
   bool attached_;
+  Dispatcher dispatcher_;
 public:
   explicit PtraceSession(pid_t pid);
   explicit PtraceSession(const std::string& pathname);

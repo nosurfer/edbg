@@ -1,3 +1,4 @@
+#pragma once
 /*
  * man 2 wait
  * WIFEXITED - returns true if child terminated normally

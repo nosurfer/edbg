@@ -1,8 +1,8 @@
 #include "ptrace_configure.h"
 #include "ptrace_session.h"
 
-#include <iostream>
 #include <sys/user.h>
+#include <print>
 
 // constructor
 PtraceSession::PtraceSession(pid_t pid)
@@ -36,7 +36,6 @@ void PtraceSession::get_regs()
 {
   if (attached_) {
     struct user_regs_struct regs = ptrace_getregs(pid_);
-    std::cout << "rip: " << std::hex << regs.rip
-      << " rax: " << std::hex << regs.rax << std::endl;
+    std::println("rip: {:#x}, rax: {:#x}", regs.rip, regs.rax);
   }
 }

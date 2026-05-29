@@ -6,7 +6,6 @@
 
 int main(int argc, char *argv[])
 {
-  
   if (argc < 2) {
     std::cerr << "Usage: " << argv[0] << " <pid>" << std::endl;
     std::exit(EXIT_FAILURE);
@@ -16,5 +15,5 @@ int main(int argc, char *argv[])
   s.get_regs();
   getchar();
   
-  std::exit(EXIT_SUCCESS);
+  std::exit(EXIT_FAILURE);
 }

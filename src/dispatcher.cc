@@ -12,6 +12,7 @@
  */ 
 
 #include <expected>
+#include <optional>
 #include <system_error>
 
 #include <sys/types.h>
@@ -36,11 +37,20 @@ private:
   int term_signal_ = 0;
   int stop_signal_ = 0;
   bool core_dumped_ = false;
+
+  void clear_state(void)
+  {
+    state_ = State::None;
+    exit_code_ = 0;
+    term_signal_ = 0;
+    stop_signal_ = 0;
+    core_dumped_ = false;
+  }
 public:
   explicit Dispatcher(pid_t pid)
     : pid_(pid) {}
 
-  std::expected<State, std::error_code> wait(void)
+  std::expected<void, std::error_code> wait(void)
   {
     int status;
 
@@ -51,30 +61,51 @@ public:
       );
     }
 
+    clear_state();
     if (WIFEXITED(status)) {
       state_ = State::Exited;
       exit_code_ = WEXITSTATUS(status);
-      return state_;
     }
-    if (WIFSIGNALED(status)) {
+    else if (WIFSIGNALED(status)) {
       state_ = State::Signaled;
       term_signal_ = WTERMSIG(status);
 #ifdef WCOREDUMP
       core_dumped_ = WCOREDUMP(status);
 #endif
-      return state_;
     }
-    if (WIFSTOPPED(status)) {
+    else if (WIFSTOPPED(status)) {
       state_ = State::Stopped;
       stop_signal_ = WSTOPSIG(status);
-      return state_;
     }
-    if (WIFCONTINUED(status)) {
+    else if (WIFCONTINUED(status)) {
       state_ = State::Continued;
-      return state_;
     }
 
-    state_ = State::None;
-    return state_;
+    return {};
+  }
+  State state(void) const noexcept { return state_; }
+  bool exited(void) const noexcept { return state_ == State::Exited; }
+  bool stopped(void) const noexcept { return state_ == State::Stopped; }
+  bool signaled(void) const noexcept { return state_ == State::Signaled; }
+  bool continued(void) const noexcept { return state_ == State::Continued; }
+  std::optional<int> exit_code(void) const noexcept
+  {
+    if (!exited()) return std::nullopt;
+    return exit_code_; 
+  }
+  std::optional<int> term_signal(void) const noexcept
+  { 
+    if (!signaled()) return std::nullopt;
+    return term_signal_; 
+  }
+  std::optional<int> stop_signal(void) const noexcept 
+  {
+    if (!stopped()) return std::nullopt;
+    return stop_signal_; 
+  }
+  std::optional<bool> core_dumped(void) const noexcept
+  { 
+    if (!signaled()) return std::nullopt;
+    return core_dumped_; 
   }
 };

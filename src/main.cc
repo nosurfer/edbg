@@ -1,19 +1,17 @@
-#include "ptrace_session.h"
+#include "debugger.cc"
 
-#include <cstdio>
 #include <cstdlib>
 #include <iostream>
 
 int main(int argc, char *argv[])
 {
   if (argc < 2) {
-    std::cerr << "Usage: " << argv[0] << " <pid>" << std::endl;
+    std::cerr << "Usage: " << argv[0] << " <pathname>" << std::endl;
     std::exit(EXIT_FAILURE);
   }
 
-  PtraceSession s = PtraceSession(argv[1]);
-  s.get_regs();
-  getchar();
-  
-  std::exit(EXIT_FAILURE);
+  Debugger dbg(argv[1]);
+  dbg.run();
+
+  std::exit(EXIT_SUCCESS);
 }

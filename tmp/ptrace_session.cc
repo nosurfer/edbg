@@ -1,7 +1,7 @@
 // [!] temp include
 #include "dispatcher.cc"
 
-#include "ptrace_configure.h"
+#include "ptrace_configure.cc"
 #include "ptrace_session.h"
 
 #include <string>
@@ -12,6 +12,7 @@
 // constructor
 PtraceSession::PtraceSession(pid_t pid)
     : pid_(pid), attached_(false), dispatcher_(pid_)
+
 {
   ptrace_attach(pid_);
   auto res = dispatcher_.wait();
@@ -54,7 +55,7 @@ PtraceSession::~PtraceSession() noexcept
   }
 }
 
-void PtraceSession::get_regs()
+void PtraceSession::regs()
 {
   if (attached_) {
     struct user_regs_struct regs = ptrace_getregs(pid_);

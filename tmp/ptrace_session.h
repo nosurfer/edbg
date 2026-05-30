@@ -8,6 +8,7 @@
 class PtraceSession {
 private:
   pid_t pid_;
+  std::string pathname;
   bool attached_;
   Dispatcher dispatcher_;
 public:
@@ -26,5 +27,5 @@ public:
   ~PtraceSession() noexcept;
   // noexcept is a specifier used to gurantee a function
   // will not throw excepctions (not error messages and interrupts)
-  void get_regs(void);
+  void regs(void);
 };

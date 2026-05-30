@@ -31,7 +31,6 @@ enum struct State {
 
 class Dispatcher {
 private:
-  pid_t pid_;
   State state_ = State::None;
 
   int exit_code_ = 0;
@@ -48,20 +47,15 @@ private:
     core_dumped_ = false;
   }
 public:
-  explicit Dispatcher(pid_t pid)
-    : pid_(pid) {}
-
-  std::expected<void, std::error_code> wait(void)
+  std::expected<void, std::error_code> wait(pid_t pid)
   {
     int status;
-
-    pid_t res = waitpid(pid_, &status, 0);
+    pid_t res = waitpid(pid, &status, 0);
     if (res == -1) {
       return std::unexpected(
         std::error_code(errno, std::generic_category())
       );
     }
-
     clear_state();
     if (WIFEXITED(status)) {
       state_ = State::Exited;
@@ -81,7 +75,6 @@ public:
     else if (WIFCONTINUED(status)) {
       state_ = State::Continued;
     }
-
     return {};
   }
   State state(void) const noexcept { return state_; }

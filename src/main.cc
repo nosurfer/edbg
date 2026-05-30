@@ -9,9 +9,7 @@ int main(int argc, char *argv[])
     std::cerr << "Usage: " << argv[0] << " <pathname>" << std::endl;
     std::exit(EXIT_FAILURE);
   }
-
   Debugger dbg(argv[1]);
   dbg.run();
-
   std::exit(EXIT_SUCCESS);
 }

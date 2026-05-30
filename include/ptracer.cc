@@ -10,6 +10,7 @@
 #include <sys/types.h>
 
 enum struct Mode {
+  None, 
   Attach,
   Spawn
 };
@@ -20,15 +21,20 @@ private:
   bool attached_;
   std::string pathname_;
   Dispatcher dispatcher_;
-  Mode mode_;
+  Mode mode_ = Mode::None; 
 public:
-  explicit Ptracer(pid_t pid)
+  Ptracer()
+    : attached_(false) {}
+  Ptracer(pid_t pid)
     : pid_(pid), attached_(false), mode_(Mode::Attach) {}
-  explicit Ptracer(std::string pathname)
+  Ptracer(std::string pathname)
     : attached_(false), pathname_(std::move(pathname)), mode_(Mode::Spawn) {}
 
   std::expected<void, std::error_code> attach(void)
   {
+    if (attached_)
+      if (auto res = detach(); !res)
+        return std::unexpected(res.error());
     if (mode_ != Mode::Attach)
       return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
     if (auto res = ptrace_attach(pid_); !res)
@@ -43,6 +49,9 @@ public:
 
   std::expected<void, std::error_code> spawn()
   {
+    if (attached_)
+      if (auto res = detach(); !res)
+        return std::unexpected(res.error());
     if (mode_ != Mode::Spawn)
       return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
     auto res = ptrace_fork(pathname_);

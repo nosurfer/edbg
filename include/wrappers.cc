@@ -4,7 +4,6 @@
 #include <expected>
 #include <string>
 #include <cstdlib>
-#include <string_view>
 #include <system_error>
 
 #include <sys/ptrace.h>
@@ -53,4 +52,12 @@ std::expected<struct user_regs_struct, std::error_code> ptrace_getregs(pid_t pid
   if (res == -1)
     return std::unexpected(std::error_code(errno, std::generic_category()));
   return regs;
+}
+
+std::expected<void, std::error_code> ptrace_continue(pid_t pid)
+{
+  long res = ptrace(PTRACE_CONT, pid, nullptr, nullptr);
+  if (res == -1)
+    return std::unexpected(std::error_code(errno, std::generic_category()));
+  return {};
 }

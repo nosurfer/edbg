@@ -15,6 +15,12 @@ private:
   pid_t pid_;
   bool attached_;
   Dispatcher dispatcher_;
+  std::expected<void, std::error_code> check_status(void)
+  {
+    // todo...
+    // and include this to all functions...
+    return {};
+  }
 public:
   Ptracer()
     : attached_(false) {}
@@ -70,6 +76,15 @@ public:
     if (!regs)
       return std::unexpected(regs.error());
     std::println("rip: {:#x}, rax: {:#x}", regs.value().rip, regs.value().rax);
+    return {};
+  }
+
+  std::expected<void, std::error_code> cont(void)
+  {
+    if (!attached_)
+      return {};
+    if (auto res = ptrace_continue(pid_); !res)
+      return std::unexpected(res.error());
     return {};
   }
 };

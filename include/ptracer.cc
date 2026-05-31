@@ -4,39 +4,27 @@
 #include "dispatcher.cc"
 
 #include <print>
+#include <utility>
 #include <expected>
 #include <system_error>
 
 #include <sys/types.h>
 
-enum struct Mode {
-  None, 
-  Attach,
-  Spawn
-};
-
 class Ptracer {
 private:
   pid_t pid_;
   bool attached_;
-  std::string pathname_;
   Dispatcher dispatcher_;
-  Mode mode_ = Mode::None; 
 public:
   Ptracer()
     : attached_(false) {}
-  Ptracer(pid_t pid)
-    : pid_(pid), attached_(false), mode_(Mode::Attach) {}
-  Ptracer(std::string pathname)
-    : attached_(false), pathname_(std::move(pathname)), mode_(Mode::Spawn) {}
+  ~Ptracer() noexcept { std::ignore = detach(); }
 
-  std::expected<void, std::error_code> attach(void)
+  std::expected<void, std::error_code> attach(pid_t pid)
   {
-    if (attached_)
-      if (auto res = detach(); !res)
-        return std::unexpected(res.error());
-    if (mode_ != Mode::Attach)
-      return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
+    pid_ = pid;
+    if (auto res = detach(); !res)
+      return std::unexpected(res.error());
     if (auto res = ptrace_attach(pid_); !res)
       return std::unexpected(res.error());
     if (auto res = dispatcher_.wait(pid_); !res)
@@ -47,14 +35,11 @@ public:
     return {};
   }
 
-  std::expected<void, std::error_code> spawn()
+  std::expected<void, std::error_code> spawn(const std::string& pathname)
   {
-    if (attached_)
-      if (auto res = detach(); !res)
-        return std::unexpected(res.error());
-    if (mode_ != Mode::Spawn)
-      return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
-    auto res = ptrace_fork(pathname_);
+    if (auto res = detach(); !res)
+      return std::unexpected(res.error());
+    auto res = ptrace_fork(pathname);
     if (!res)
       return std::unexpected(res.error());
     pid_ = res.value();
@@ -69,7 +54,7 @@ public:
   std::expected<void, std::error_code> detach()
   {
     if (!attached_)
-      return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
+      return {};
     auto res = ptrace_detach(pid_);
     if (!res)
       return std::unexpected(res.error());
@@ -80,15 +65,11 @@ public:
   std::expected<void, std::error_code> regs(void)
   {
     if (!attached_)
-      return std::unexpected(std::make_error_code(std::errc::operation_not_permitted));
+      return {};
     auto regs = ptrace_getregs(pid_);
     if (!regs)
       return std::unexpected(regs.error());
     std::println("rip: {:#x}, rax: {:#x}", regs.value().rip, regs.value().rax);
     return {};
   }
-
-  pid_t pid(void) const noexcept { return pid_; }
-  Mode mode(void) const noexcept { return mode_; }
-  bool attached(void) const noexcept { return attached_; }
 };

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ptracer.cc"
+
 #include <string>
 #include <iostream>
 
@@ -8,23 +9,7 @@ class Debugger {
 private:
   Ptracer ptracer_;
 public:
-  Debugger() = default;
-  Debugger(pid_t pid)
-    : ptracer_(pid) {}
-  Debugger(std::string path)
-    : ptracer_(std::move(path)) {}
-
   void run(void) {
-    switch (ptracer_.mode()) {
-      case Mode::Attach:
-        attach();
-        break;
-      case Mode::Spawn:
-        spawn();
-        break;
-      default:
-        break;
-    }
     for (;;) {
       std::string input;
       std::print(" > ");
@@ -40,20 +25,19 @@ public:
       if (input == "file") {
         std::print("input filepath: ");
         std::getline(std::cin, input);
-        ptracer_ = Ptracer(input);
-        spawn();
+        spawn(input);
       }
     }
   }
-  void attach(void)
+  void attach(pid_t pid)
   {
-    auto res = ptracer_.attach();
+    auto res = ptracer_.attach(pid);
     if (!res)
       std::println(stderr, "ptrace attach: {}", res.error().message());
   }
-  void spawn(void)
+  void spawn(const std::string& pathname)
   {
-    auto res = ptracer_.spawn();
+    auto res = ptracer_.spawn(pathname);
     if (!res)
       std::println(stderr, "ptrace spawn: {}", res.error().message());
   }

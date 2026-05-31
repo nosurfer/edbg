@@ -4,6 +4,7 @@
 #include <expected>
 #include <string>
 #include <cstdlib>
+#include <string_view>
 #include <system_error>
 
 #include <sys/ptrace.h>

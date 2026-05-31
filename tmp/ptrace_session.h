@@ -1,12 +1,16 @@
 #pragma once
 
+#include <dispatcher.cc>
+
 #include <string>
 #include <sys/types.h>
 
 class PtraceSession {
 private:
   pid_t pid_;
+  std::string pathname;
   bool attached_;
+  Dispatcher dispatcher_;
 public:
   explicit PtraceSession(pid_t pid);
   explicit PtraceSession(const std::string& pathname);
@@ -23,5 +27,5 @@ public:
   ~PtraceSession() noexcept;
   // noexcept is a specifier used to gurantee a function
   // will not throw excepctions (not error messages and interrupts)
-  void get_regs(void);
+  void regs(void);
 };

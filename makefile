@@ -3,7 +3,7 @@
 # make rm    - remove build setup and spdlog lib
 
 CC      := g++
-CFLAGS  := -Wall -Wextra -O3 -Iinclude -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+CFLAGS  := -Wall -std=c++26 -Wextra -O3 -Iinclude 
 LDFLAGS :=
 LOGS    := err
 

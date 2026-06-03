@@ -15,10 +15,36 @@ private:
   pid_t pid_;
   bool attached_;
   Dispatcher dispatcher_;
-  std::expected<void, std::error_code> check_status(void)
+  std::expected<void, std::error_code> wait_status(void)
   {
-    // todo...
-    // and include this to all functions...
+    if (auto res = dispatcher_.wait(pid_); !res)
+      return std::unexpected(res.error());
+    switch (dispatcher_.state()) {
+      case State::Exited:
+        std::println(stdout, "process exited with status: {}", dispatcher_.exit_code().value());
+        attached_ = false;
+        break;
+      case State::Signaled:
+#ifdef WCOREDUMP
+        if (dispatcher_.core_dumped().value_or(false))
+          std::println(stdout, "process core dumped");
+#endif
+        std::println(stdout, "process exited with signal: {}", dispatcher_.term_signal().value());
+        attached_ = false;
+        break;
+      case State::Stopped:
+        std::println(stdout, "process stopped with signal: {}", dispatcher_.stop_signal().value());
+        attached_ = true;
+        break;
+      case State::Continued:
+        std::println("process continued");
+        attached_ = true;
+        break;
+      case State::None:
+        return std::unexpected(
+            std::make_error_code(std::errc::state_not_recoverable)
+        );
+    }
     return {};
   }
 public:
@@ -29,49 +55,39 @@ public:
   std::expected<void, std::error_code> attach(pid_t pid)
   {
     pid_ = pid;
-    if (auto res = detach(); !res)
-      return std::unexpected(res.error());
+    std::ignore = detach();
     if (auto res = ptrace_attach(pid_); !res)
       return std::unexpected(res.error());
-    if (auto res = dispatcher_.wait(pid_); !res)
-      return std::unexpected(res.error());
-    if (!dispatcher_.stopped())
-      return std::unexpected(std::make_error_code(std::errc::connection_reset));
-    attached_ = true;
-    return {};
+    return wait_status();
   }
 
   std::expected<void, std::error_code> spawn(const std::string& pathname)
   {
-    if (auto res = detach(); !res)
-      return std::unexpected(res.error());
-    auto res = ptrace_fork(pathname);
-    if (!res)
-      return std::unexpected(res.error());
-    pid_ = res.value();
-    if (auto res = dispatcher_.wait(pid_); !res)
-      return std::unexpected(res.error());
-    if (!dispatcher_.stopped())
-      return std::unexpected(std::make_error_code(std::errc::connection_reset));
-    attached_ = true;
-    return {};
+    std::ignore = detach();
+    auto pid = ptrace_fork(pathname);
+    if (!pid)
+      return std::unexpected(pid.error());
+    pid_ = *pid;
+    return wait_status();
   }
 
   std::expected<void, std::error_code> detach()
   {
     if (!attached_)
       return {};
-    auto res = ptrace_detach(pid_);
-    if (!res)
+    if (auto res = ptrace_detach(pid_); !res)
       return std::unexpected(res.error());
     attached_ = false;
+    std::println("ptrace: process detached");
     return {};
   }
 
   std::expected<void, std::error_code> regs(void)
   {
-    if (!attached_)
+    if (!attached_) {
+      std::println("registers: attach to process");
       return {};
+    }
     auto regs = ptrace_getregs(pid_);
     if (!regs)
       return std::unexpected(regs.error());
@@ -81,10 +97,13 @@ public:
 
   std::expected<void, std::error_code> cont(void)
   {
-    if (!attached_)
+    if (!attached_) {
+      std::println("continue: attach to process");
       return {};
+    }
     if (auto res = ptrace_continue(pid_); !res)
       return std::unexpected(res.error());
-    return {};
+
+    return wait_status();
   }
 };

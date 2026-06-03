@@ -11,21 +11,23 @@ make
 
 ## Todo
 
-- [ ] more comments everywhere...
+- [ ] more comments everywhere... (needed?)
 - [ ] getting registers info
   - [x] configuration (wrapper)
 - [ ] continue handler
-  - [ ] configuration (wrapper)
+  - [x] configuration (wrapper)
 - [ ] breakpoint handler
   - [ ] configuration (wrapper)
 - [ ] step handler
   - [ ] configuration (wrapper)
 - [ ] info maps (vmmap)
+  - [ ] handler
 - [ ] next handler
   - [ ] configuration (wrapper)
 - [ ] memmory read / write
   - [ ] configuration (wrapper)
 - [ ] process status handling
+  - [x] handler
 - [ ] help and quit features
 - [ ] tests
 

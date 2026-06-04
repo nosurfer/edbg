@@ -1,9 +1,11 @@
 #pragma once
 
-#include "disassembler.cc"
-
 #include <cerrno>
+#include <cstdint>
+#include <cstring>
+#include <span>
 #include <string>
+#include <vector>
 #include <cstdlib>
 #include <fstream>
 #include <expected>
@@ -80,6 +82,30 @@ std::expected<std::ifstream, std::error_code> vmmap(pid_t pid)
    if (!maps)
      return std::unexpected(std::error_code(errno, std::generic_category()));
    return maps;
+}
+
+template <typename T>
+std::expected<void, std::error_code>
+readmem(pid_t pid, std::uintptr_t address, std::span<T> buffer)
+{
+  auto bytes = std::as_writable_bytes(buffer);
+  constexpr std::size_t word_size = sizeof(long);
+
+  for (std::size_t offset = 0; offset < bytes.size(); offset += word_size) {
+    errno = 0;
+    long word = ptrace(
+        PTRACE_PEEKTEXT,
+        pid,
+        reinterpret_cast<void*>(address + offset),
+        nullptr
+    );
+    if (word == -1 || errno != 0)
+      return std::unexpected(std::error_code(errno, std::generic_category()));
+
+    std::size_t copy_size = std::min(word_size, bytes.size() - offset);
+    std::memcpy(bytes.data() + offset, &word, copy_size);
+  }
+  return {};
 }
 
 std::expected<void, std::error_code> disass(pid_t pid)

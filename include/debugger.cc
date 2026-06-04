@@ -2,6 +2,7 @@
 
 #include "ptracer.cc"
 
+#include <cstdint>
 #include <string>
 #include <iostream>
 
@@ -26,6 +27,10 @@ public:
         step();
       } else if (input == "maps") {
         maps();
+      } else if (input == "qword") {
+        std::print("address: ");
+        std::getline(std::cin, input);
+        readq(static_cast<std::uintptr_t>(std::stoull(input, nullptr, 16)));
       } else if (input == "file") {
         std::print("input filepath: ");
         std::getline(std::cin, input);
@@ -36,27 +41,27 @@ public:
   void attach(pid_t pid)
   {
     if (auto res = ptracer_.attach(pid); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace attach: {}", res.error().message());
   }
   void spawn(const std::string& pathname)
   {
     if (auto res = ptracer_.spawn(pathname); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace spawn: {}", res.error().message());
   }
   void detach(void)
   {
     if (auto res = ptracer_.detach(); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace detach: {}", res.error().message());
   }
   void regs(void)
   {
     if (auto res = ptracer_.regs(); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace regs: {}", res.error().message());
   }
   void cont(void)
   {
     if (auto res = ptracer_.cont(); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace cont: {}", res.error().message());
   }
   void step(void)
   {
@@ -66,6 +71,11 @@ public:
   void maps(void)
   {
     if (auto res = ptracer_.maps(); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "ptrace maps: {}", res.error().message());
+  }
+  void readq(std::uintptr_t address)
+  {
+    if (auto res = ptracer_.readq(address); !res)
+      std::println(stderr, "read: {}", res.error().message());
   }
 };

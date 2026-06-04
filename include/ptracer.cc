@@ -1,9 +1,9 @@
 #pragma once
 
-#include "disassembler.cc"
 #include "wrappers.cc"
 #include "dispatcher.cc"
 
+#include <cstdint>
 #include <print>
 #include <utility>
 #include <expected>
@@ -130,6 +130,19 @@ public:
     if (!maps)
       return std::unexpected(maps.error());
     std::cout << maps->rdbuf();
+    return {};
+  }
+
+  std::expected<void, std::error_code> readq(std::uintptr_t address)
+  {
+    if (!attached_) {
+      std::println("read: attach to process");
+      return {};
+    }
+    std::uint64_t value;
+    if (auto result = readmem(pid_, address, std::span{&value, 1}); !result)
+        return std::unexpected(result.error());
+    std::println(" {:08x} ", value);
     return {};
   }
 

@@ -1,5 +1,6 @@
 #pragma once
 
+#include "disassembler.cc"
 #include "wrappers.cc"
 #include "dispatcher.cc"
 
@@ -129,6 +130,12 @@ public:
     if (!maps)
       return std::unexpected(maps.error());
     std::cout << maps->rdbuf();
+    return {};
+  }
+
+  std::expected<void, std::error_code> disass(void)
+  {
+    // todo...
     return {};
   }
 };

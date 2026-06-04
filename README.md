@@ -10,7 +10,6 @@ make
 ```
 
 ## Todo
-
 - [ ] more comments everywhere... (needed?)
 - [ ] getting registers info
   - [x] configuration (wrapper)
@@ -22,14 +21,20 @@ make
   - [x] configuration (wrapper)
 - [ ] info maps (vmmap)
   - [x] handler
-- [ ] next handler
-  - [ ] configuration (wrapper)
 - [ ] memmory read / write
   - [ ] configuration (wrapper)
+- [ ] disassemble
+  - [x] handler
 - [ ] breakpoint handler
+  - [ ] configuration (wrapper)
+- [ ] next handler
   - [ ] configuration (wrapper)
 - [ ] help and quit features
 - [ ] tests
+
+## Thoughts
+- [ ] kill process with exit
+- [ ] other architectures?
 
 ### Done
 - [x] ptrace_fork func

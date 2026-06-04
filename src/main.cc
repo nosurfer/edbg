@@ -2,7 +2,7 @@
 
 #include <cstdlib>
 
-int main(int argc, char *argv[])
+int main()
 {
   Debugger dbg;
   dbg.run();

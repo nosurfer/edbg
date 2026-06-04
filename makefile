@@ -4,8 +4,8 @@
 
 CC      := g++
 CFLAGS  := -Wall -std=c++26 -Wextra -O3 -Iinclude 
-LDFLAGS :=
-LOGS    := err
+LDFLAGS := -lcapstone
+# LOGS    := err
 
 SRC_DIR := src
 OBJ_DIR := obj
@@ -28,14 +28,14 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | $(OBJ_DIR)
 $(OBJ_DIR):
 	mkdir -p $@
 
-pull:
-	@rm -rf /tmp/spdlog_tmp
-	@git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
-	@git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
-	@mkdir -p include
-	@rm -rf include/spdlog
-	@cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
-	@rm -rf /tmp/spdlog_tmp
+# pull:
+# 	@rm -rf /tmp/spdlog_tmp
+# 	@git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
+# 	@git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
+# 	@mkdir -p include
+# 	@rm -rf include/spdlog
+# 	@cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
+# 	@rm -rf /tmp/spdlog_tmp
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)

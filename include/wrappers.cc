@@ -1,5 +1,7 @@
 #pragma once
 
+#include "disassembler.cc"
+
 #include <cerrno>
 #include <string>
 #include <cstdlib>
@@ -78,4 +80,10 @@ std::expected<std::ifstream, std::error_code> vmmap(pid_t pid)
    if (!maps)
      return std::unexpected(std::error_code(errno, std::generic_category()));
    return maps;
+}
+
+std::expected<void, std::error_code> disass(pid_t pid)
+{
+  // todo...
+  return {};
 }

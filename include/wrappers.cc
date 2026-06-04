@@ -1,11 +1,10 @@
 #pragma once
 
+#include <span>
 #include <cerrno>
 #include <cstdint>
 #include <cstring>
-#include <span>
 #include <string>
-#include <vector>
 #include <cstdlib>
 #include <fstream>
 #include <expected>
@@ -99,7 +98,7 @@ readmem(pid_t pid, std::uintptr_t address, std::span<T> buffer)
         reinterpret_cast<void*>(address + offset),
         nullptr
     );
-    if (word == -1 || errno != 0)
+    if (errno != 0)
       return std::unexpected(std::error_code(errno, std::generic_category()));
 
     std::size_t copy_size = std::min(word_size, bytes.size() - offset);

@@ -2,8 +2,8 @@
 
 #include "ptracer.cc"
 
-#include <cstdint>
 #include <string>
+#include <cstdint>
 #include <iostream>
 
 class Debugger {
@@ -22,6 +22,7 @@ public:
       } else if (input == "cont") {
         cont();
       } else if (input == "exit") {
+        pkill();
         break;
       } else if (input == "step") {
         step();
@@ -46,32 +47,37 @@ public:
   void spawn(const std::string& pathname)
   {
     if (auto res = ptracer_.spawn(pathname); !res)
-      std::println(stderr, "ptrace spawn: {}", res.error().message());
+      std::println(stderr, "spawn: {}", res.error().message());
   }
   void detach(void)
   {
     if (auto res = ptracer_.detach(); !res)
-      std::println(stderr, "ptrace detach: {}", res.error().message());
+      std::println(stderr, "detach: {}", res.error().message());
+  }
+  void pkill(void)
+  {
+    if (auto res = ptracer_.pkill(); !res)
+      std::println(stderr, "kill: {}", res.error().message());
   }
   void regs(void)
   {
     if (auto res = ptracer_.regs(); !res)
-      std::println(stderr, "ptrace regs: {}", res.error().message());
+      std::println(stderr, "regs: {}", res.error().message());
   }
   void cont(void)
   {
     if (auto res = ptracer_.cont(); !res)
-      std::println(stderr, "ptrace cont: {}", res.error().message());
+      std::println(stderr, "cont: {}", res.error().message());
   }
   void step(void)
   {
     if (auto res = ptracer_.step(); !res)
-      std::println(stderr, "ptrace step: {}", res.error().message());
+      std::println(stderr, "step: {}", res.error().message());
   }
   void maps(void)
   {
     if (auto res = ptracer_.maps(); !res)
-      std::println(stderr, "ptrace maps: {}", res.error().message());
+      std::println(stderr, "maps: {}", res.error().message());
   }
   void readq(std::uintptr_t address)
   {

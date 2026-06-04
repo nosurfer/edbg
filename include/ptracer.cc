@@ -3,8 +3,10 @@
 #include "wrappers.cc"
 #include "dispatcher.cc"
 
-#include <cstdint>
 #include <print>
+#include <vector>
+#include <csignal>
+#include <cstdint>
 #include <utility>
 #include <expected>
 #include <iostream>
@@ -56,8 +58,8 @@ public:
 
   std::expected<void, std::error_code> attach(pid_t pid)
   {
-    pid_ = pid;
     std::ignore = detach();
+    pid_ = pid;
     if (auto res = ptrace_attach(pid_); !res)
       return std::unexpected(res.error());
     return wait_status();
@@ -133,16 +135,29 @@ public:
     return {};
   }
 
-  std::expected<void, std::error_code> readq(std::uintptr_t address)
+  std::expected<void, std::error_code> readm(std::uintptr_t address, std::size_t size)
   {
     if (!attached_) {
       std::println("read: attach to process");
       return {};
     }
-    std::uint64_t value;
-    if (auto result = readmem(pid_, address, std::span{&value, 1}); !result)
+    std::vector<std::byte> value(size);
+    if (auto result = readmem(pid_, address, std::span{value}); !result)
         return std::unexpected(result.error());
-    std::println(" {:08x} ", value);
+    // todo ...
+    // std::println(" {:016x} ", value);
+    return {};
+  }
+
+  std::expected<void, std::error_code> pkill(void)
+  {
+    if (!attached_) {
+      std::println("kill: attach to process");
+      return {};
+    }
+    if (auto res = kill(pid_, SIGKILL); res == -1)
+      return std::unexpected(std::error_code(errno, std::generic_category()));
+    std::println("kill: process with pid {} killed", pid_);
     return {};
   }
 

@@ -21,7 +21,7 @@ make
 - [ ] step handler
   - [x] configuration (wrapper)
 - [ ] info maps (vmmap)
-  - [ ] handler
+  - [x] handler
 - [ ] next handler
   - [ ] configuration (wrapper)
 - [ ] memmory read / write

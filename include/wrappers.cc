@@ -1,9 +1,11 @@
 #pragma once
 
 #include <cerrno>
-#include <expected>
 #include <string>
 #include <cstdlib>
+#include <fstream>
+#include <expected>
+#include <iostream>
 #include <system_error>
 
 #include <sys/ptrace.h>
@@ -68,4 +70,12 @@ std::expected<void, std::error_code> ptrace_step(pid_t pid)
   if (res == -1)
     return std::unexpected(std::error_code(errno, std::generic_category()));
   return {};
+}
+
+std::expected<std::ifstream, std::error_code> vmmap(pid_t pid)
+{
+   std::ifstream maps("/proc/" + std::to_string(pid) + "/maps");
+   if (!maps)
+     return std::unexpected(std::error_code(errno, std::generic_category()));
+   return maps;
 }

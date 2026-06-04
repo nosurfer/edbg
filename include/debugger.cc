@@ -24,6 +24,8 @@ public:
         break;
       } else if (input == "step") {
         step();
+      } else if (input == "maps") {
+        maps();
       } else if (input == "file") {
         std::print("input filepath: ");
         std::getline(std::cin, input);
@@ -33,38 +35,37 @@ public:
   }
   void attach(pid_t pid)
   {
-    auto res = ptracer_.attach(pid);
-    if (!res)
-      std::println(stderr, "ptrace attach: {}", res.error().message());
+    if (auto res = ptracer_.attach(pid); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
   void spawn(const std::string& pathname)
   {
-    auto res = ptracer_.spawn(pathname);
-    if (!res)
-      std::println(stderr, "ptrace spawn: {}", res.error().message());
+    if (auto res = ptracer_.spawn(pathname); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
   void detach(void)
   {
-    auto res = ptracer_.detach();
-    if (!res)
-      std::println(stderr, "ptrace detach: {}", res.error().message());
+    if (auto res = ptracer_.detach(); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
   void regs(void)
   {
-    auto res = ptracer_.regs();
-    if (!res)
-      std::println(stderr, "ptrace get regs: {}", res.error().message());
+    if (auto res = ptracer_.regs(); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
   void cont(void)
   {
-    auto res = ptracer_.cont();
-    if (!res)
-      std::println(stderr, "ptrace continued: {}", res.error().message());
+    if (auto res = ptracer_.cont(); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
   void step(void)
   {
-    auto res = ptracer_.step();
-    if (!res)
+    if (auto res = ptracer_.step(); !res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
+  }
+  void maps(void)
+  {
+    if (auto res = ptracer_.maps(); !res)
       std::println(stderr, "ptrace step: {}", res.error().message());
   }
 };

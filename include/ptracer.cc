@@ -6,6 +6,7 @@
 #include <print>
 #include <utility>
 #include <expected>
+#include <iostream>
 #include <system_error>
 
 #include <sys/types.h>
@@ -68,6 +69,7 @@ public:
     if (!pid)
       return std::unexpected(pid.error());
     pid_ = *pid;
+    std::println(stdout, "ptrace: spawned process with pid {}", pid_);
     return wait_status();
   }
 
@@ -115,5 +117,18 @@ public:
     if (auto res = ptrace_step(pid_); !res)
       return std::unexpected(res.error());
     return wait_status();
+  }
+  
+  std::expected<void, std::error_code> maps(void)
+  {
+    if (!attached_) {
+      std::println("maps: attach to process");
+      return {};
+    }
+    auto maps = vmmap(pid_);
+    if (!maps)
+      return std::unexpected(maps.error());
+    std::cout << maps->rdbuf();
+    return {};
   }
 };

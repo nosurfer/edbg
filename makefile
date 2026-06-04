@@ -4,7 +4,7 @@
 
 CC      := g++
 CFLAGS  := -Wall -std=c++26 -Wextra -O3 -Iinclude 
-LDFLAGS := -lcapstone
+LDFLAGS := -lcapstone -lreadline
 # LOGS    := err
 
 SRC_DIR := src

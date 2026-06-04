@@ -103,7 +103,17 @@ public:
     }
     if (auto res = ptrace_continue(pid_); !res)
       return std::unexpected(res.error());
+    return wait_status();
+  }
 
+  std::expected<void, std::error_code> step(void)
+  {
+    if (!attached_) {
+      std::println("step: attach to process");
+      return {};
+    }
+    if (auto res = ptrace_step(pid_); !res)
+      return std::unexpected(res.error());
     return wait_status();
   }
 };

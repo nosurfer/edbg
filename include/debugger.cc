@@ -14,18 +14,17 @@ public:
       std::string input;
       std::print(" > ");
       std::getline(std::cin, input);
-      if (input == "regs")
+      if (input == "regs") {
         regs();
-      else if (input == "detach") {
+      } else if (input == "detach") {
         detach();
-      }
-      else if (input == "cont") {
+      } else if (input == "cont") {
         cont();
-      }
-      else if (input == "exit") {
+      } else if (input == "exit") {
         break;
-      }
-      else if (input == "file") {
+      } else if (input == "step") {
+        step();
+      } else if (input == "file") {
         std::print("input filepath: ");
         std::getline(std::cin, input);
         spawn(input);
@@ -61,5 +60,11 @@ public:
     auto res = ptracer_.cont();
     if (!res)
       std::println(stderr, "ptrace continued: {}", res.error().message());
+  }
+  void step(void)
+  {
+    auto res = ptracer_.step();
+    if (!res)
+      std::println(stderr, "ptrace step: {}", res.error().message());
   }
 };

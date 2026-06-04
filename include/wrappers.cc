@@ -61,3 +61,11 @@ std::expected<void, std::error_code> ptrace_continue(pid_t pid)
     return std::unexpected(std::error_code(errno, std::generic_category()));
   return {};
 }
+
+std::expected<void, std::error_code> ptrace_step(pid_t pid)
+{
+  long res = ptrace(PTRACE_SINGLESTEP, pid, nullptr, nullptr);
+  if (res == -1)
+    return std::unexpected(std::error_code(errno, std::generic_category()));
+  return {};
+}

@@ -16,18 +16,18 @@ make
   - [x] configuration (wrapper)
 - [ ] continue handler
   - [x] configuration (wrapper)
-- [ ] breakpoint handler
-  - [ ] configuration (wrapper)
+- [ ] process status handling
+  - [x] handler
 - [ ] step handler
-  - [ ] configuration (wrapper)
+  - [x] configuration (wrapper)
 - [ ] info maps (vmmap)
   - [ ] handler
 - [ ] next handler
   - [ ] configuration (wrapper)
 - [ ] memmory read / write
   - [ ] configuration (wrapper)
-- [ ] process status handling
-  - [x] handler
+- [ ] breakpoint handler
+  - [ ] configuration (wrapper)
 - [ ] help and quit features
 - [ ] tests
 

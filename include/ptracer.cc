@@ -3,7 +3,9 @@
 #include "wrappers.cc"
 #include "dispatcher.cc"
 
+#include <cstddef>
 #include <print>
+#include <string>
 #include <vector>
 #include <csignal>
 #include <cstdint>
@@ -135,17 +137,25 @@ public:
     return {};
   }
 
-  std::expected<void, std::error_code> readm(std::uintptr_t address, std::size_t size)
+  std::expected<void, std::error_code> readm(std::uintptr_t address, std::size_t size = 1)
   {
     if (!attached_) {
       std::println("read: attach to process");
       return {};
     }
-    std::vector<std::byte> value(size);
-    if (auto result = readmem(pid_, address, std::span{value}); !result)
+    std::vector<std::uint64_t> values(size);
+    if (auto result = readmem(pid_, address, std::span{values}); !result)
         return std::unexpected(result.error());
-    // todo ...
-    // std::println(" {:016x} ", value);
+    constexpr std::size_t word_size = sizeof(std::uint64_t);
+    for (std::size_t i = 0; i < values.size(); i++) {
+      if (i % 2 == 0)
+        std::print("{:#018x}: ", address + i * word_size);
+      std::print("{:016x} ", values[i]);
+      if (i % 2 == 1)
+        std::println();
+    }
+    if (values.size() % 2 != 0)
+      std::println();
     return {};
   }
 

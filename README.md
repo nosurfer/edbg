@@ -33,7 +33,7 @@ make
 - [ ] tests
 
 ## Thoughts
-- [ ] kill process with exit
+- [x] kill process with exit
 - [ ] other architectures?
 
 ### Done

@@ -29,9 +29,13 @@ public:
       } else if (input == "maps") {
         maps();
       } else if (input == "qword") {
+        std::size_t size;
         std::print("address: ");
         std::getline(std::cin, input);
-        readq(static_cast<std::uintptr_t>(std::stoull(input, nullptr, 16)));
+        std::uintptr_t addr = static_cast<std::uintptr_t>(std::stoull(input, nullptr, 16));
+        std::print("count: ");
+        std::cin >> size;
+        readm(addr, size);
       } else if (input == "file") {
         std::print("input filepath: ");
         std::getline(std::cin, input);
@@ -79,9 +83,9 @@ public:
     if (auto res = ptracer_.maps(); !res)
       std::println(stderr, "maps: {}", res.error().message());
   }
-  void readq(std::uintptr_t address)
+  void readm(std::uintptr_t address, std::size_t size)
   {
-    if (auto res = ptracer_.readq(address); !res)
+    if (auto res = ptracer_.readm(address, size); !res)
       std::println(stderr, "read: {}", res.error().message());
   }
 };

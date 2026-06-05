@@ -7,177 +7,173 @@
 #include <cstdint>
 #include <string>
 #include <iostream>
-#include <sstream>
+#include <unordered_map>
+#include <functional>
 
 class Debugger {
 private:
     Ptracer ptracer_;
+    bool exit_requested_ = false;
 
-    // ========== НОВЫЕ ВСПОМОГАТЕЛЬНЫЕ МЕТОДЫ (только они и run() изменяются) ==========
+    struct CommandInfo {
+        std::string help;
+        std::function<void(const ParsedCommand&)> handler;
+    };
+    std::unordered_map<std::string, CommandInfo> commands_;
 
-    /// Вывод справки по командам.
-    void show_help(const ParsedCommand& cmd) {
-        if (cmd.args.empty()) {
-            // Справка общего вида: список команд
-            std::println("Available commands:");
-            for (const auto& c : get_command_list()) {
-                std::println("  {}", c);
-            }
-            std::println("Type 'help <command>' for details.");
-        } else {
-            // Справка по конкретной команде
-            const std::string& topic = cmd.args[0];
-            if (topic == "step") {
-                std::println("step -- single step (one instruction)");
-            } else if (topic == "read") {
-                std::println("read --address ADDR [--size SIZE] -- read memory (default size=8)");
-            } else if (topic == "file") {
-                std::println("file PATH -- spawn a new process");
-            } else if (topic == "regs") {
-                std::println("regs -- show registers");
-            } else if (topic == "cont") {
-                std::println("cont -- continue execution");
-            } else if (topic == "detach") {
-                std::println("detach -- detach from process");
-            } else if (topic == "maps") {
-                std::println("maps -- show memory maps");
-            } else if (topic == "qword") {
-                std::println("qword ADDR -- read 8 bytes at address");
-            } else if (topic == "exit") {
-                std::println("exit -- quit debugger");
-            } else if (topic == "attach") {
-                std::println("attach PID -- attach to running process");
-            } else {
-                std::println("No help for '{}'", topic);
-            }
-        }
+    // Initialize the command dictionary.
+    // Adding a new command: simply add one entry to this dictionary.
+    // Key = command name, value = {help, lambda handler}.
+    // Inside the lambda you can directly call ptracer_ methods or any other functions.
+    void init_commands() {
+        commands_ = {
+            // Commands without arguments
+            {"detach",  {"detach -- detach from process", [this](auto&){
+                if (auto res = ptracer_.detach(); !res)
+                    std::println(stderr, "ptrace detach: {}", res.error().message());
+            }}},
+            {"cont",    {"cont -- continue execution", [this](auto&){
+                if (auto res = ptracer_.cont(); !res)
+                    std::println(stderr, "ptrace cont: {}", res.error().message());
+            }}},
+            {"step",    {"step -- single step (one instruction)", [this](auto&){
+                if (auto res = ptracer_.step(); !res)
+                    std::println(stderr, "ptrace step: {}", res.error().message());
+            }}},
+            {"regs",    {"regs -- show registers", [this](auto&){
+                if (auto res = ptracer_.regs(); !res)
+                    std::println(stderr, "ptrace regs: {}", res.error().message());
+            }}},
+            {"maps",    {"maps -- show memory maps", [this](auto&){
+                if (auto res = ptracer_.maps(); !res)
+                    std::println(stderr, "ptrace maps: {}", res.error().message());
+            }}},
+            {"exit",    {"exit -- quit debugger", [this](auto&){ exit_requested_ = true; }}},
+            {"disass",  {"disass -- disassemble current instruction (not ready)", [](auto&){
+                std::println("disass: not implemented yet");
+            }}},
+
+            // Commands with one argument
+            {"attach",  {"attach PID -- attach to running process", [this](const auto& cmd){
+                if (cmd.args.empty()) {
+                    std::println("Usage: attach PID");
+                    return;
+                }
+                pid_t pid = std::stoi(cmd.args[0]);
+                if (auto res = ptracer_.attach(pid); !res)
+                    std::println(stderr, "ptrace attach: {}", res.error().message());
+            }}},
+            {"file",    {"file PATH -- spawn a new process", [this](const auto& cmd){
+                if (cmd.args.empty()) {
+                    std::println("Usage: file PATH");
+                    return;
+                }
+                if (auto res = ptracer_.spawn(cmd.args[0]); !res)
+                    std::println(stderr, "ptrace spawn: {}", res.error().message());
+            }}},
+            {"qword",   {"qword ADDR -- read 8 bytes at address", [this](const auto& cmd){
+                if (cmd.args.empty()) {
+                    std::println("Usage: qword ADDR");
+                    return;
+                }
+                std::uintptr_t addr = std::stoull(cmd.args[0], nullptr, 16);
+                if (auto res = ptracer_.readq(addr); !res)
+                    std::println(stderr, "read: {}", res.error().message());
+            }}},
+
+            // Command 'read' with options --address and --size
+            {"read",    {"read --address ADDR [--size SIZE] -- read memory (default size=8)",
+                         [this](const auto& cmd){
+                std::uintptr_t addr = 0;
+                std::size_t size = 8;
+                if (auto opt = cmd.get_option("address"))
+                    addr = std::stoull(*opt, nullptr, 16);
+                else if (!cmd.args.empty())
+                    addr = std::stoull(cmd.args[0], nullptr, 16);
+                else {
+                    std::println("Usage: read --address ADDR [--size SIZE]");
+                    return;
+                }
+                if (auto opt = cmd.get_option("size"))
+                    size = std::stoull(*opt);
+                if (size == 8) {
+                    if (auto res = ptracer_.readq(addr); !res)
+                        std::println(stderr, "read: {}", res.error().message());
+                } else {
+                    std::println("read: only 8-byte reads are implemented now");
+                }
+            }}},
+
+            // Help
+            {"help",    {"help [command] -- show this help", [this](const auto& cmd){ show_help(cmd); }}}
+        };
     }
 
-    /// Обработка команды "read" (читает память, используя существующий readq).
-    void handle_read(const ParsedCommand& cmd) {
-        std::uintptr_t addr = 0;
-        std::size_t size = 8;   // по умолчанию 8 байт (qword)
-        // Пытаемся получить адрес из опции --address или из первого позиционного аргумента
-        if (auto opt = cmd.get_option("address")) {
-            addr = std::stoull(*opt, nullptr, 16);
-        } else if (!cmd.args.empty()) {
-            addr = std::stoull(cmd.args[0], nullptr, 16);
+    // Display help: without arguments – list commands, with argument – details.
+    void show_help(const ParsedCommand& cmd) {
+        if (cmd.args.empty()) {
+            std::println("Available commands:");
+            for (const auto& [name, info] : commands_)
+                std::println("  {}", name);
+            std::println("Type 'help <command>' for details.");
         } else {
-            std::println("Usage: read --address ADDR [--size SIZE]");
-            return;
-        }
-        // Получить размер (опционально)
-        if (auto opt = cmd.get_option("size")) {
-            size = std::stoull(*opt);
-        }
-        // Пока поддерживаем только чтение 8 байт (можно расширить позже)
-        if (size == 8) {
-            readq(addr);   // вызов существующего метода
-        } else {
-            std::println("read: only 8-byte reads are implemented now");
+            const std::string& topic = cmd.args[0];
+            auto it = commands_.find(topic);
+            if (it != commands_.end())
+                std::println("{}", it->second.help);
+            else
+                std::println("No help for '{}'", topic);
         }
     }
 
 public:
-    // ========== ИЗМЕНЁННЫЙ МЕТОД run() – теперь использует readline и парсер ==========
-    void run(void) {
-        init_readline();          // инициализация автодополнения и истории
-        char* line;
-        for (;;) {
-            line = read_command(" > ");   // получить строку с приглашением
-            if (!line) break;             // Ctrl+D – выход
+    Debugger() {
+        init_commands();
+    }
 
-            add_command_history(line);    // сохранить в историю, если не пусто
+    // Public method to execute a command from a string (used by main.cc and run()).
+    void execute_command(const std::string& line) {
+        ParsedCommand cmd = CommandParser::parse(line);
+        if (cmd.command.empty()) return;
 
-            std::string input(line);
-            free(line);                   // освободить память, выделенную readline
-            if (input.empty()) continue;  // пустая строка – ничего не делаем
-
-            // Разобрать команду с помощью нашего парсера
-            ParsedCommand cmd = CommandParser::parse(input);
-
-            // Глобальная поддержка --help для любой команды
-            if (cmd.has_option("help")) {
-                show_help(cmd);
-                continue;
-            }
-
-            // ===== ДИСПЕТЧЕР КОМАНД =====
-            // Все старые команды вызываются без изменений.
-            // Добавлены новые: help, read, attach (раньше attach не был доступен в REPL).
-            if (cmd.command == "regs") {
-                regs();                 // старый метод
-            } else if (cmd.command == "detach") {
-                detach();               // старый
-            } else if (cmd.command == "cont") {
-                cont();                 // старый
-            } else if (cmd.command == "exit") {
-                break;
-            } else if (cmd.command == "step") {
-                step();                 // старый (один шаг)
-            } else if (cmd.command == "maps") {
-                maps();                 // старый
-            } else if (cmd.command == "qword") {
-                if (!cmd.args.empty()) {
-                    std::uintptr_t addr = std::stoull(cmd.args[0], nullptr, 16);
-                    readq(addr);        // старый readq
-                } else {
-                    std::println("qword ADDR");
-                }
-            } else if (cmd.command == "file") {
-                if (!cmd.args.empty()) {
-                    spawn(cmd.args[0]); // старый spawn
-                } else {
-                    std::println("file PATH");
-                }
-            } else if (cmd.command == "help") {
-                show_help(cmd);         // новая команда
-            } else if (cmd.command == "read") {
-                handle_read(cmd);       // новая команда
-            } else if (cmd.command == "attach") {
-                if (!cmd.args.empty()) {
-                    pid_t pid = std::stoi(cmd.args[0]);
-                    attach(pid);        // старый attach (раньше не был доступен)
-                } else {
-                    std::println("attach PID");
-                }
-            } else if (!cmd.command.empty()) {
-                std::println("Unknown command: '{}'. Type 'help'.", cmd.command);
+        // Map single‑character commands to full names
+        static const std::unordered_map<char, std::string> short_commands = {
+            {'s', "step"},
+            {'c', "cont"},
+            {'d', "detach"},
+            {'f', "file"},
+            {'x', "read"},
+            {'r', "regs"},
+            {'q', "exit"}
+        };
+        if (cmd.command.size() == 1) {
+            auto it = short_commands.find(cmd.command[0]);
+            if (it != short_commands.end()) {
+                cmd.command = it->second;
             }
         }
+
+        auto it = commands_.find(cmd.command);
+        if (it != commands_.end())
+            it->second.handler(cmd);
+        else if (!cmd.command.empty())
+            std::println("Unknown command: '{}'. Type 'help'.", cmd.command);
     }
 
-    // ========== СТАРЫЕ МЕТОДЫ (НЕ ИЗМЕНЯЮТСЯ) – приведены для полноты ==========
-    void attach(pid_t pid) {
-        if (auto res = ptracer_.attach(pid); !res)
-            std::println(stderr, "ptrace attach: {}", res.error().message());
-    }
-    void spawn(const std::string& pathname) {
-        if (auto res = ptracer_.spawn(pathname); !res)
-            std::println(stderr, "ptrace spawn: {}", res.error().message());
-    }
-    void detach(void) {
-        if (auto res = ptracer_.detach(); !res)
-            std::println(stderr, "ptrace detach: {}", res.error().message());
-    }
-    void regs(void) {
-        if (auto res = ptracer_.regs(); !res)
-            std::println(stderr, "ptrace regs: {}", res.error().message());
-    }
-    void cont(void) {
-        if (auto res = ptracer_.cont(); !res)
-            std::println(stderr, "ptrace cont: {}", res.error().message());
-    }
-    void step(void) {
-        if (auto res = ptracer_.step(); !res)
-            std::println(stderr, "ptrace step: {}", res.error().message());
-    }
-    void maps(void) {
-        if (auto res = ptracer_.maps(); !res)
-            std::println(stderr, "ptrace maps: {}", res.error().message());
-    }
-    void readq(std::uintptr_t address) {
-        if (auto res = ptracer_.readq(address); !res)
-            std::println(stderr, "read: {}", res.error().message());
+    // Main REPL loop
+    void run() {
+        init_readline();
+        char* line;
+        while (!exit_requested_) {
+            line = read_command(" > ");
+            if (!line) break;
+            add_command_history(line);
+            std::string input(line);
+            free(line);
+            if (input.empty()) continue;
+
+            // Delegate all command handling to execute_command()
+            execute_command(input);
+        }
     }
 };

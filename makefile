@@ -28,7 +28,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.cc | $(OBJ_DIR)
 $(OBJ_DIR):
 	mkdir -p $@
 
-# pull:
+pull:
 # 	@rm -rf /tmp/spdlog_tmp
 # 	@git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
 # 	@git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
@@ -36,6 +36,12 @@ $(OBJ_DIR):
 # 	@rm -rf include/spdlog
 # 	@cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
 # 	@rm -rf /tmp/spdlog_tmp
+
+	@rm -rf /tmp/cli11_tmp
+	@git clone --depth 1 --branch v2.4.2 https://github.com/CLIUtils/CLI11.git /tmp/cli11_tmp
+	@mkdir -p include/CLI
+	@cp -a /tmp/cli11_tmp/include/CLI/. include/CLI/
+	@rm -rf /tmp/cli11_tmp
 
 clean:
 	rm -rf $(OBJ_DIR) $(TARGET)

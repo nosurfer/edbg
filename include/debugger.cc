@@ -28,6 +28,8 @@ public:
         step();
       } else if (input == "maps") {
         maps();
+      } else if (input == "disass") {
+        disass();
       } else if (input == "qword") {
         std::size_t size;
         std::print("address: ");
@@ -87,5 +89,10 @@ public:
   {
     if (auto res = ptracer_.readm(address, size); !res)
       std::println(stderr, "read: {}", res.error().message());
+  }
+  void disass(void)
+  {
+    if (auto res = ptracer_.disass(); !res)
+      std::println(stderr, "disass: {}", res.error().message());
   }
 };

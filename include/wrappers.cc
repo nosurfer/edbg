@@ -2,9 +2,9 @@
 
 #include <span>
 #include <cerrno>
+#include <string>
 #include <cstdint>
 #include <cstring>
-#include <string>
 #include <cstdlib>
 #include <fstream>
 #include <expected>
@@ -15,9 +15,6 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <sys/user.h>
-
-#include <stdlib.h>
-#include <unistd.h>
 
 std::expected<void, std::error_code> ptrace_attach(pid_t pid)
 {
@@ -104,11 +101,5 @@ readmem(pid_t pid, std::uintptr_t address, std::span<T> buffer)
     std::size_t copy_size = std::min(word_size, bytes.size() - offset);
     std::memcpy(bytes.data() + offset, &word, copy_size);
   }
-  return {};
-}
-
-std::expected<void, std::error_code> disass(pid_t pid)
-{
-  // todo...
   return {};
 }

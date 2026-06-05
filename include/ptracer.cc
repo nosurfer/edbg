@@ -1,14 +1,20 @@
 #pragma once
 
 #include "wrappers.cc"
+#include "disassembler.cc"
 #include "dispatcher.cc"
 
-#include <cstdint>
 #include <print>
+#include <string>
+#include <vector>
+#include <csignal>
+#include <cstdint>
+#include <cstddef>
 #include <utility>
 #include <expected>
 #include <iostream>
 #include <system_error>
+#include <unordered_map>
 
 #include <sys/types.h>
 
@@ -17,47 +23,76 @@ private:
   pid_t pid_;
   bool attached_;
   Dispatcher dispatcher_;
+
+  struct Breakpoint {
+    std::uintptr_t address;
+    std::uint8_t original_byte;
+    bool enabled;
+  };
+
+  std::unordered_map<std::uintptr_t, Breakpoint> breakpoints_;
+
   std::expected<void, std::error_code> wait_status(void)
   {
     if (auto res = dispatcher_.wait(pid_); !res)
       return std::unexpected(res.error());
+
     switch (dispatcher_.state()) {
+
       case State::Exited:
-        std::println(stdout, "process exited with status: {}", dispatcher_.exit_code().value());
+        std::println(stdout, "process exited with status: {}",
+                     dispatcher_.exit_code().value());
         attached_ = false;
         break;
+
       case State::Signaled:
 #ifdef WCOREDUMP
         if (dispatcher_.core_dumped().value_or(false))
           std::println(stdout, "process core dumped");
 #endif
-        std::println(stdout, "process exited with signal: {}", dispatcher_.term_signal().value());
+        std::println(stdout, "process exited with signal: {}",
+                     dispatcher_.term_signal().value());
         attached_ = false;
         break;
+
       case State::Stopped:
-        std::println(stdout, "process stopped with signal: {}", dispatcher_.stop_signal().value());
+        std::println(stdout, "process stopped with signal: {}",
+                     dispatcher_.stop_signal().value());
         attached_ = true;
+
+        if (dispatcher_.stop_signal() == SIGTRAP) {
+          auto regs = ptrace_getregs(pid_);
+          if (regs) {
+            auto rip = regs->rip - 1;
+
+            if (breakpoints_.contains(rip)) {
+              std::println(stdout, "breakpoint hit at {:#x}", rip);
+            }
+          }
+        }
         break;
+
       case State::Continued:
         std::println("process continued");
         attached_ = true;
         break;
+
       case State::None:
         return std::unexpected(
-            std::make_error_code(std::errc::state_not_recoverable)
-        );
+            std::make_error_code(std::errc::state_not_recoverable));
     }
+
     return {};
   }
+
 public:
-  Ptracer()
-    : attached_(false) {}
+  Ptracer() : attached_(false) {}
   ~Ptracer() noexcept { std::ignore = detach(); }
 
   std::expected<void, std::error_code> attach(pid_t pid)
   {
-    pid_ = pid;
     std::ignore = detach();
+    pid_ = pid;
     if (auto res = ptrace_attach(pid_); !res)
       return std::unexpected(res.error());
     return wait_status();
@@ -94,7 +129,9 @@ public:
     auto regs = ptrace_getregs(pid_);
     if (!regs)
       return std::unexpected(regs.error());
-    std::println("rip: {:#x}, rax: {:#x}", regs.value().rip, regs.value().rax);
+    std::println("rip: {:#x}, rax: {:#x}",
+                 regs.value().rip,
+                 regs.value().rax);
     return {};
   }
 
@@ -103,6 +140,40 @@ public:
     if (!attached_) {
       std::println("continue: attach to process");
       return {};
+    }
+    auto regs = ptrace_getregs(pid_);
+    if (!regs)
+      return std::unexpected(regs.error());
+
+    if (regs) {
+      auto rip = regs->rip - 1;
+
+      if (breakpoints_.contains(rip)) {
+        auto& bp = breakpoints_[rip];
+        std::uint64_t word{};
+        if (auto res = readmem(pid_, rip, std::span{&word, 1}); !res)
+          return std::unexpected(res.error());
+
+        word &= ~0xffULL;
+        word |= bp.original_byte;
+
+        if (auto res = writemem(pid_, rip, std::span{&word, 1}); !res)
+          return std::unexpected(res.error());
+
+        regs->rip -= 1;
+        if (auto res = ptrace_setregs(pid_, *regs); !res)
+          return std::unexpected(res.error());
+
+        if (auto res = ptrace_step(pid_); !res)
+          return std::unexpected(res.error());
+        if (auto res = wait_status(); !res)
+          return std::unexpected(res.error());
+
+        word &= ~0xffULL;
+        word |= 0xCCULL;
+        if (auto res = writemem(pid_, rip, std::span{&word, 1}); !res)
+          return std::unexpected(res.error());
+      }
     }
     if (auto res = ptrace_continue(pid_); !res)
       return std::unexpected(res.error());
@@ -119,7 +190,7 @@ public:
       return std::unexpected(res.error());
     return wait_status();
   }
-  
+
   std::expected<void, std::error_code> maps(void)
   {
     if (!attached_) {
@@ -133,22 +204,130 @@ public:
     return {};
   }
 
-  std::expected<void, std::error_code> readq(std::uintptr_t address)
+  std::expected<void, std::error_code>
+  readm(std::uintptr_t address, std::size_t size = 1)
   {
     if (!attached_) {
-      std::println("read: attach to process");
+      std::println("readm: attach to process");
       return {};
     }
-    std::uint64_t value;
-    if (auto result = readmem(pid_, address, std::span{&value, 1}); !result)
-        return std::unexpected(result.error());
-    std::println(" {:08x} ", value);
+    std::vector<std::uint64_t> values(size);
+    if (auto result = readmem(pid_, address, std::span{values}); !result)
+      return std::unexpected(result.error());
+
+    for (std::size_t i = 0; i < values.size(); i++) {
+      std::print("{:#018x}: {:016x}\n",
+                 address + i * 8,
+                 values[i]);
+    }
     return {};
   }
 
-  std::expected<void, std::error_code> disass(void)
+  std::expected<void, std::error_code>
+  writem(std::uintptr_t address, std::uint64_t value)
   {
-    // todo...
+    if (!attached_) {
+      std::println("writem: attach to process");
+      return {};
+    }
+    if (auto result = writemem(pid_, address, std::span{&value, 1}); !result)
+      return std::unexpected(result.error());
+    std::println("writem: ok");
     return {};
+  }
+
+  std::expected<void, std::error_code>
+  breakpoint(std::uintptr_t address)
+  {
+    if (!attached_) {
+      std::println("breakpoint: attach to process");
+      return {};
+    }
+    if (breakpoints_.contains(address)) {
+      std::println("breakpoint: already exists");
+      return {};
+    }
+    std::uint64_t word{};
+    if (auto res = readmem(pid_, address, std::span{&word, 1}); !res)
+      return std::unexpected(res.error());
+
+    Breakpoint bp{
+      .address = address,
+      .original_byte = static_cast<std::uint8_t>(word & 0xff),
+      .enabled = true
+    };
+
+    word &= ~0xffULL;
+    word |= 0xCCULL;
+
+    if (auto res = writemem(pid_, address, std::span{&word, 1}); !res)
+      return std::unexpected(res.error());
+
+    breakpoints_[address] = bp;
+
+    std::println("breakpoint set at {:#x}", address);
+    return {};
+  }
+
+  std::expected<void, std::error_code>
+  breakpoint_delete(std::uintptr_t address)
+  {
+    if (!attached_) {
+      std::println("pkill: attach to process");
+      return {};
+    }
+    auto it = breakpoints_.find(address);
+    if (it == breakpoints_.end()) {
+      std::println("breakpoint not found");
+      return {};
+    }
+
+    std::uint64_t word{};
+    if (auto res = readmem(pid_, address, std::span{&word, 1}); !res)
+      return std::unexpected(res.error());
+
+    word &= ~0xffULL;
+    word |= it->second.original_byte;
+
+    if (auto res = writemem(pid_, address, std::span{&word, 1}); !res)
+      return std::unexpected(res.error());
+
+    breakpoints_.erase(it);
+
+    std::println("breakpoint removed at {:#x}", address);
+    return {};
+  }
+
+  std::expected<void, std::error_code> pkill(void)
+  {
+    if (!attached_) {
+      std::println("pkill: attach to process");
+      return {};
+    }
+
+    if (auto res = kill(pid_, SIGKILL); res == -1)
+      return std::unexpected(std::error_code(errno, std::generic_category()));
+
+    std::println("kill: process killed");
+    return {};
+  }
+
+  std::expected<void, std::error_code>
+  disass(std::uintptr_t address = 0, std::size_t size = 128)
+  {
+    if (!attached_) {
+      std::println("disass: attach to process");
+      return {};
+    }
+    if (address == 0) {
+      auto regs = ptrace_getregs(pid_);
+      if (!regs)
+        return std::unexpected(regs.error());
+      address = regs->rip;
+    }
+    std::vector<std::uint8_t> code(size);
+    if (auto res = readmem(pid_, address, std::span{code}); !res)
+      return std::unexpected(res.error());
+    return disassembly(std::span{code}, address);
   }
 };

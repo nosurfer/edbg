@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <print>
 #include <expected>
@@ -10,12 +11,11 @@
 #define CAPSTONE_ARCH CS_ARCH_X86
 #define CAPSTONE_MODE CS_MODE_64
 
-std::expected<void, std::error_code> disassembly(void *shellcode_addr, size_t shellcode_size)
+std::expected<void, std::error_code> disassembly(std::span<const std::uint8_t> code, std::uintptr_t base_addr)
 {
   csh handle = {};
   size_t count = 0;
   cs_insn *insn = nullptr;
-  auto* code = reinterpret_cast<const uint8_t*>(shellcode_addr);
 
   if (cs_err err = cs_open(CAPSTONE_ARCH, CAPSTONE_MODE, &handle); err != CS_ERR_OK)
     return std::unexpected(
@@ -27,30 +27,37 @@ std::expected<void, std::error_code> disassembly(void *shellcode_addr, size_t sh
 
   count = cs_disasm(
     handle, 
-    code,
-    shellcode_size, 
-    reinterpret_cast<uint64_t>(shellcode_addr), 
+    code.data(),
+    code.size(), 
+    base_addr,
     0, 
     &insn
   );
 
   if (count > 0) {
     size_t j;
+    constexpr std::size_t max_insn_size = 15;
     for (j = 0; j < count; j++) {
       std::print("0x{:016x} | ", insn[j].address);
-      for (int k = 0; k < insn[j].size; k++)
+      for (std::size_t k = 0; k < insn[j].size; k++)
         std::print("{:02x} ", insn[j].bytes[k]);
-      for (int k = insn[j].size; k < 15; k++)
+      for (std::size_t k = insn[j].size; k < max_insn_size; k++)
         std::print("   ");
       std::println(" | {} {}", insn[j].mnemonic, insn[j].op_str);
     }
     cs_free(insn, count);
   } else {
-      std::println(stderr, "capstone: failed to disassemble shellcode");
-      for (unsigned int i = 0; i <= shellcode_size; i += 16) {
-        std::print("0x{:016x} | ", reinterpret_cast<uintptr_t>(code+i));
-      for (int k = 0; k < 16; k++)
-        std::print("{:02x} ", code[i+k]);
+    std::println(stderr, "capstone: failed to disassemble");
+
+    for (std::size_t i = 0; i < code.size(); i += 16) {
+      std::print("0x{:016x} | ", base_addr + i);
+
+      auto line_size =
+          std::min<std::size_t>(16, code.size() - i);
+
+      for (std::size_t k = 0; k < line_size; ++k)
+          std::print("{:02x} ", code[i + k]);
+
       std::println();
     }
   }

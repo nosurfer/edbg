@@ -22,30 +22,26 @@ make
 - [ ] info maps (vmmap)
   - [x] handler
 - [ ] memmory read / write
-  - [ ] configuration (wrapper)
+  - [x] memory read
+  - [x] memory write
 - [ ] disassemble
   - [x] handler
 - [ ] breakpoint handler
-  - [ ] configuration (wrapper)
-- [ ] next handler
-  - [ ] configuration (wrapper)
+  - [x] configuration (wrapper)
+- [ ] change regs value
+  - [x] handler
+- [ ] ctrl-c process sigtrap
+  - [ ] handler
+- [ ] makefile
+  - [x] temp version
+- [x] kill process with exit
 - [ ] help and quit features
 - [ ] tests
+- [ ] next handler??????
+  - [ ] configuration (wrapper)
 
-## Thoughts
-- [ ] kill process with exit
-- [ ] other architectures?
-
+<<<<<<< HEAD
 ### Done
 - [x] ptrace_fork func
 - [x] add logs (extern lib)
 - [x] temporary makefile
-
-
-### Улучшенный интерфейс командной строки
-- **Автодополнение по Tab** – введите начало команды, нажмите Tab.
-- **История команд** – стрелки ↑/↓.
-- **Парсер опций** – короткие опции (`-la`), длинные (`--help`, `--count=5`), значения через `=` или пробел.
-- **Глобальный `--help`** – любая команда с `--help` показывает справку.
-- **Новая команда `help`** – выводит список команд или справку по конкретной команде.
-- **Команда `attach PID`** – теперь доступна в REPL.

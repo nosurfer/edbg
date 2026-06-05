@@ -1,6 +1,12 @@
 # edbg
 
-## Install
+**edbg** is a simple debugger. 
+It provides core debugging primitives such as attach/spawn, breakpoints, stepping, register inspection, and memory operations.
+
+---
+
+## Installation
+
 ```bash
 git clone https://github.com/nosurfer/edbg.git
 cd edbg

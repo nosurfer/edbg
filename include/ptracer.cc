@@ -175,24 +175,19 @@ public:
   std::expected<void, std::error_code>
   disass(std::uintptr_t address = 0, std::size_t size = 128)
   {
-      if (!attached_) {
-          std::println("disass: attach to process");
-          return {};
-      }
-
-      if (address == 0) {
-          auto regs = ptrace_getregs(pid_);
-          if (!regs)
-              return std::unexpected(regs.error());
-
-          address = regs->rip;
-      }
-
-      std::vector<std::uint8_t> code(size);
-
-      if (auto res = readmem(pid_, address, std::span{code}); !res)
-          return std::unexpected(res.error());
-
-      return disassembly(std::span{code}, address);
+    if (!attached_) {
+      std::println("disass: attach to process");
+      return {};
+    }
+    if (address == 0) {
+      auto regs = ptrace_getregs(pid_);
+      if (!regs)
+          return std::unexpected(regs.error());
+      address = regs->rip;
+    }
+    std::vector<std::uint8_t> code(size);
+    if (auto res = readmem(pid_, address, std::span{code}); !res)
+      return std::unexpected(res.error());
+    return disassembly(std::span{code}, address);
   }
 };

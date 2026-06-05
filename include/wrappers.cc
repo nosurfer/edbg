@@ -80,7 +80,7 @@ std::expected<std::ifstream, std::error_code> vmmap(pid_t pid)
    return maps;
 }
 
-template <typename T>
+template<typename T>
 std::expected<void, std::error_code>
 readmem(pid_t pid, std::uintptr_t address, std::span<T> buffer)
 {
@@ -90,16 +90,43 @@ readmem(pid_t pid, std::uintptr_t address, std::span<T> buffer)
   for (std::size_t offset = 0; offset < bytes.size(); offset += word_size) {
     errno = 0;
     long word = ptrace(
-        PTRACE_PEEKTEXT,
-        pid,
-        reinterpret_cast<void*>(address + offset),
-        nullptr
+      PTRACE_PEEKTEXT,
+      pid,
+      reinterpret_cast<void*>(address + offset),
+      nullptr
     );
-    if (errno != 0)
+    if (word == -1 && errno != 0)
       return std::unexpected(std::error_code(errno, std::generic_category()));
 
     std::size_t copy_size = std::min(word_size, bytes.size() - offset);
     std::memcpy(bytes.data() + offset, &word, copy_size);
   }
+  return {};
+}
+
+std::expected<void, std::error_code>
+writemem(pid_t pid, std::uintptr_t address, std::span<const std::uint64_t> data)
+{
+  constexpr std::size_t word_size = sizeof(long);
+  for (std::size_t i = 0; i < data.size(); ++i) {
+    errno = 0;
+    long res = ptrace(
+      PTRACE_POKETEXT,
+      pid,
+      reinterpret_cast<void*>(address + i * word_size),
+      static_cast<long>(data[i])
+    );
+    if (res == -1 && errno != 0)
+      return std::unexpected(
+        std::error_code(errno, std::generic_category()));
+  }
+  return {};
+}
+
+std::expected<void, std::error_code> ptrace_setregs(pid_t pid, const user_regs_struct& regs)
+{
+  long res = ptrace(PTRACE_SETREGS, pid, nullptr, &regs);
+  if (res == -1)
+    return std::unexpected(std::error_code(errno, std::generic_category()));
   return {};
 }

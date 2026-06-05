@@ -22,21 +22,24 @@ make
 - [ ] info maps (vmmap)
   - [x] handler
 - [ ] memmory read / write
-  - [ ] configuration (wrapper)
+  - [x] memory read
+  - [x] memory write
 - [ ] disassemble
   - [x] handler
 - [ ] breakpoint handler
-  - [ ] configuration (wrapper)
-- [ ] next handler
-  - [ ] configuration (wrapper)
+  - [x] configuration (wrapper)
+- [ ] change regs value
+  - [x] handler
+- [ ] ctrl-c process sigtrap
+  - [ ] handler
+- [ ] makefile
+  - [x] temp version
 - [ ] help and quit features
 - [ ] tests
+
+- [ ] next handler??????
+  - [ ] configuration (wrapper)
 
 ## Thoughts
 - [x] kill process with exit
 - [ ] other architectures?
-
-### Done
-- [x] ptrace_fork func
-- [x] add logs (extern lib)
-- [x] temporary makefile

@@ -129,9 +129,31 @@ public:
     auto regs = ptrace_getregs(pid_);
     if (!regs)
       return std::unexpected(regs.error());
-    std::println("rip: {:#x}, rax: {:#x}",
-                 regs.value().rip,
-                 regs.value().rax);
+
+    const auto& r = regs.value();
+
+    std::println("rax: {:#x}", r.rax);
+    std::println("rbx: {:#x}", r.rbx);
+    std::println("rcx: {:#x}", r.rcx);
+    std::println("rdx: {:#x}", r.rdx);
+    std::println("rsi: {:#x}", r.rsi);
+    std::println("rdi: {:#x}", r.rdi);
+    std::println("rbp: {:#x}", r.rbp);
+    std::println("rsp: {:#x}", r.rsp);
+    std::println("r8:  {:#x}", r.r8);
+    std::println("r9:  {:#x}", r.r9);
+    std::println("r10: {:#x}", r.r10);
+    std::println("r11: {:#x}", r.r11);
+    std::println("r12: {:#x}", r.r12);
+    std::println("r13: {:#x}", r.r13);
+    std::println("r14: {:#x}", r.r14);
+    std::println("r15: {:#x}", r.r15);
+    std::println("rip: {:#x}", r.rip);
+    std::println("eflags: {:#x}", r.eflags);
+    std::println("orig_rax: {:#x}", r.orig_rax);
+    std::println("fs_base: {:#x}", r.fs_base);
+    std::println("gs_base: {:#x}", r.gs_base);
+
     return {};
   }
 

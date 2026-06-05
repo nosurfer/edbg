@@ -329,6 +329,7 @@ public:
     if (auto res = kill(pid_, SIGKILL); res == -1)
       return std::unexpected(std::error_code(errno, std::generic_category()));
     std::println("kill: process killed");
+    attached_ = false;
     return {};
   }
 

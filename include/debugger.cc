@@ -106,9 +106,10 @@ private:
                     size = std::stoull(*opt);
                 if (size == 8) {
                     if (auto res = ptracer_.readm(addr); !res)
-                        std::println(stderr, "read: {}", res.error().message());
+                      std::println(stderr, "read: {}", res.error().message());
                 } else {
-                    std::println("read: only 8-byte reads are implemented now");
+                    if (auto res = ptracer_.readm(addr, size); !res)
+                      std::println(stderr, "read: {}", res.error().message());
                 }
             }}},
 
@@ -260,5 +261,6 @@ public:
 
             execute_command(input);
         }
+        std::ignore = ptracer_.pkill();
     }
 };

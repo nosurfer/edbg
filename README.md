@@ -10,16 +10,17 @@ make
 ```
 
 ## Todo
-- [ ] more comments everywhere... (needed?)
+- [x] detach
 - [ ] getting registers info
   - [x] configuration (wrapper)
-- [ ] continue handler
+  - [ ] setregs
+- [x] continue handler
   - [x] configuration (wrapper)
-- [ ] process status handling
+- [x] process status handling
   - [x] handler
-- [ ] step handler
+- [x] step handler
   - [x] configuration (wrapper)
-- [ ] info maps (vmmap)
+- [x] info maps (vmmap)
   - [x] handler
 - [ ] memmory read / write
   - [x] memory read
@@ -30,18 +31,8 @@ make
   - [x] configuration (wrapper)
 - [ ] change regs value
   - [x] handler
-- [ ] ctrl-c process sigtrap
-  - [ ] handler
+- [ ] kill process with exit
+- [x] help and quit features
 - [ ] makefile
   - [x] temp version
-- [x] kill process with exit
-- [ ] help and quit features
 - [ ] tests
-- [ ] next handler??????
-  - [ ] configuration (wrapper)
-
-<<<<<<< HEAD
-### Done
-- [x] ptrace_fork func
-- [x] add logs (extern lib)
-- [x] temporary makefile

@@ -77,7 +77,7 @@ private:
                     return;
                 }
                 std::uintptr_t addr = std::stoull(cmd.args[0], nullptr, 16);
-                if (auto res = ptracer_.readq(addr); !res)
+                if (auto res = ptracer_.readm(addr); !res)
                     std::println(stderr, "read: {}", res.error().message());
             }}},
 
@@ -97,7 +97,7 @@ private:
                 if (auto opt = cmd.get_option("size"))
                     size = std::stoull(*opt);
                 if (size == 8) {
-                    if (auto res = ptracer_.readq(addr); !res)
+                    if (auto res = ptracer_.readm(addr); !res)
                         std::println(stderr, "read: {}", res.error().message());
                 } else {
                     std::println("read: only 8-byte reads are implemented now");

@@ -9,7 +9,7 @@
 
 static const std::vector<std::string> commands = {
     "attach", "cont", "detach", "disass", "exit", "file",
-    "help", "maps", "qword", "read", "regs", "step"
+    "help", "maps", "qword", "read", "regs", "step", "write", "break", "delete" ,"kill"
 };
 
 const std::vector<std::string>& get_command_list() {

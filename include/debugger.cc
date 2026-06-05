@@ -46,18 +46,27 @@ private:
             }}},
             {"exit",    {"exit -- quit debugger", [this](auto&){ exit_requested_ = true; }}},
 
-            // --- Disassembly (now implemented) ---
-            {"disass",  {"disass [ADDR] -- disassemble code at address (or current RIP)", [this](const auto& cmd){
+            // --- Disassembly ---
+            {"disass",  {"disass [ADDR] [SIZE] -- disassemble SIZE bytes at ADDR (default SIZE=128, ADDR=RIP)", [this](const auto& cmd){
                 std::uintptr_t addr = 0;
+                std::size_t size = 128;
                 if (!cmd.args.empty()) {
                     try {
-                        addr = std::stoull(cmd.args[0], nullptr, 16);
+                        addr = std::stoull(cmd.args[0], nullptr, 0);
                     } catch (...) {
                         std::println("Invalid address: {}", cmd.args[0]);
                         return;
                     }
                 }
-                if (auto res = ptracer_.disass(addr); !res)
+                if (cmd.args.size() >= 2) {
+                    try {
+                        size = std::stoull(cmd.args[1], nullptr, 0);
+                    } catch (...) {
+                        std::println("Invalid size: {}", cmd.args[1]);
+                        return;
+                    }
+                }
+                if (auto res = ptracer_.disass(addr, size); !res)
                     std::println(stderr, "disass: {}", res.error().message());
             }}},
 
@@ -80,7 +89,7 @@ private:
                     std::println(stderr, "ptrace spawn: {}", res.error().message());
             }}},
 
-            // --- Memory read (already present) ---
+            // --- Memory read ---
             {"qword",   {"qword ADDR -- read 8 bytes at address", [this](const auto& cmd){
                 if (cmd.args.empty()) {
                     std::println("Usage: qword ADDR");
@@ -113,10 +122,10 @@ private:
                 }
             }}},
 
-            // --- Memory write (new) ---
-            {"writem",  {"writem ADDR VALUE -- write 8 bytes to memory address (both hex)", [this](const auto& cmd){
+            // --- Memory write ---
+            {"write",  {"write ADDR VALUE -- write 8 bytes to memory address (both hex)", [this](const auto& cmd){
                 if (cmd.args.size() < 2) {
-                    std::println("Usage: writem ADDR VALUE");
+                    std::println("Usage: write ADDR VALUE");
                     return;
                 }
                 std::uintptr_t addr;
@@ -129,13 +138,13 @@ private:
                     return;
                 }
                 if (auto res = ptracer_.writem(addr, value); !res)
-                    std::println(stderr, "writem: {}", res.error().message());
+                    std::println(stderr, "write: {}", res.error().message());
             }}},
 
-            // --- Breakpoint management (new) ---
-            {"breakpoint", {"breakpoint ADDR -- set software breakpoint", [this](const auto& cmd){
+            // --- Breakpoint management ---
+            {"break", {"break ADDR -- set software breakpoint", [this](const auto& cmd){
                 if (cmd.args.empty()) {
-                    std::println("Usage: breakpoint ADDR");
+                    std::println("Usage: break ADDR");
                     return;
                 }
                 std::uintptr_t addr;
@@ -148,25 +157,9 @@ private:
                 if (auto res = ptracer_.breakpoint(addr); !res)
                     std::println(stderr, "breakpoint: {}", res.error().message());
             }}},
-            {"bp",      {"bp ADDR -- alias for breakpoint", [this](const auto& cmd){
-                // same as breakpoint
+            {"delete", {"delete ADDR -- delete breakpoint", [this](const auto& cmd){
                 if (cmd.args.empty()) {
-                    std::println("Usage: bp ADDR");
-                    return;
-                }
-                std::uintptr_t addr;
-                try {
-                    addr = std::stoull(cmd.args[0], nullptr, 16);
-                } catch (...) {
-                    std::println("Invalid address: {}", cmd.args[0]);
-                    return;
-                }
-                if (auto res = ptracer_.breakpoint(addr); !res)
-                    std::println(stderr, "breakpoint: {}", res.error().message());
-            }}},
-            {"breakpoint-del", {"breakpoint-del ADDR -- delete breakpoint", [this](const auto& cmd){
-                if (cmd.args.empty()) {
-                    std::println("Usage: breakpoint-del ADDR");
+                    std::println("Usage: delete ADDR");
                     return;
                 }
                 std::uintptr_t addr;
@@ -179,23 +172,14 @@ private:
                 if (auto res = ptracer_.breakpoint_delete(addr); !res)
                     std::println(stderr, "breakpoint-del: {}", res.error().message());
             }}},
-            {"bpdel",   {"bpdel ADDR -- alias for breakpoint-del", [this](const auto& cmd){
-                if (cmd.args.empty()) {
-                    std::println("Usage: bpdel ADDR");
-                    return;
-                }
-                std::uintptr_t addr;
-                try {
-                    addr = std::stoull(cmd.args[0], nullptr, 16);
-                } catch (...) {
-                    std::println("Invalid address: {}", cmd.args[0]);
-                    return;
-                }
-                if (auto res = ptracer_.breakpoint_delete(addr); !res)
-                    std::println(stderr, "bpdel: {}", res.error().message());
+
+            // --- Process termination (NEW) ---
+            {"kill",    {"kill -- terminate the traced process with SIGKILL", [this](const auto&){
+                if (auto res = ptracer_.pkill(); !res)
+                    std::println(stderr, "kill: {}", res.error().message());
             }}},
 
-            // --- Help (last) ---
+            // --- Help ---
             {"help",    {"help [command] -- show this help", [this](const auto& cmd){ show_help(cmd); }}}
         };
     }
@@ -228,11 +212,13 @@ public:
         static const std::unordered_map<char, std::string> short_commands = {
             {'s', "step"},
             {'c', "cont"},
-            {'d', "detach"},
+            {'d', "delete"},
             {'f', "file"},
             {'x', "read"},
             {'r', "regs"},
-            {'q', "exit"}
+            {'q', "exit"},
+            {'b', "break"},
+            {'k', "kill"}    // NEW: short alias for kill
         };
         if (cmd.command.size() == 1) {
             auto it = short_commands.find(cmd.command[0]);
@@ -261,6 +247,6 @@ public:
 
             execute_command(input);
         }
-        std::ignore = ptracer_.pkill();
+        std::ignore = ptracer_.pkill();  // уже было
     }
 };

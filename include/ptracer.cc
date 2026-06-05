@@ -323,7 +323,7 @@ public:
   std::expected<void, std::error_code> pkill(void)
   {
     if (!attached_) {
-      std::println("pkill: attach to process");
+      std::println("kill: attach to process");
       return {};
     }
     if (auto res = kill(pid_, SIGKILL); res == -1)

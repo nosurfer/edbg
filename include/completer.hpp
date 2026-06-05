@@ -3,6 +3,14 @@
 #include <string>
 #include <vector>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+#include <cstring>
+#include <vector>
+#include <algorithm>
+#include <sys/ioctl.h>
+#include <unistd.h>
+
 /**
  * @brief Initialize readline: set application name and completion function.
  *        Must be called once before the first call to read_command().

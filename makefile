@@ -5,7 +5,6 @@
 CC      := g++
 CFLAGS  := -Wall -std=c++26 -Wextra -O3 -Iinclude 
 LDFLAGS := -lcapstone -lreadline
-# LOGS    := err
 
 SRC_DIR := src
 OBJ_DIR := obj
@@ -29,14 +28,6 @@ $(OBJ_DIR):
 	mkdir -p $@
 
 pull:
-# 	@rm -rf /tmp/spdlog_tmp
-# 	@git clone --depth 1 --filter=blob:none --sparse https://github.com/gabime/spdlog.git /tmp/spdlog_tmp
-# 	@git -C /tmp/spdlog_tmp sparse-checkout set include/spdlog
-# 	@mkdir -p include
-# 	@rm -rf include/spdlog
-# 	@cp -a /tmp/spdlog_tmp/include/spdlog include/spdlog
-# 	@rm -rf /tmp/spdlog_tmp
-
 	@rm -rf /tmp/cli11_tmp
 	@git clone --depth 1 --branch v2.4.2 https://github.com/CLIUtils/CLI11.git /tmp/cli11_tmp
 	@mkdir -p include/CLI

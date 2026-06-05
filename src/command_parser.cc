@@ -1,7 +1,4 @@
-#include "command_parser.h"
-#include <cctype>      // for isspace
-#include <vector>
-#include <string>
+#include "command_parser.hpp"
 
 // ----- Helper function: split a string into tokens by whitespace -----
 // We do not use std::stringstream because it leads to "vexing parse" on some compilers.

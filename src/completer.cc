@@ -1,11 +1,4 @@
-#include "completer.h"
-#include <readline/readline.h>
-#include <readline/history.h>
-#include <cstring>
-#include <vector>
-#include <algorithm>
-#include <sys/ioctl.h>
-#include <unistd.h>
+#include "completer.hpp"
 
 static const std::vector<std::string> commands = {
     "attach", "cont", "detach", "disass", "exit", "file",

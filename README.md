@@ -10,10 +10,9 @@ make
 ```
 
 ## Todo
+- [x] attach
+- [x] spawn
 - [x] detach
-- [ ] getting registers info
-  - [x] configuration (wrapper)
-  - [ ] setregs
 - [x] continue handler
   - [x] configuration (wrapper)
 - [x] process status handling
@@ -22,16 +21,18 @@ make
   - [x] configuration (wrapper)
 - [x] info maps (vmmap)
   - [x] handler
-- [ ] memmory read / write
+- [x] memmory read / write
   - [x] memory read
   - [x] memory write
-- [ ] disassemble
+- [x] disassemble
   - [x] handler
-- [ ] breakpoint handler
+- [x] breakpoint handler
   - [x] configuration (wrapper)
+- [x] read regs value
+  - [x] handler
 - [ ] change regs value
   - [x] handler
-- [ ] kill process with exit
+- [x] kill process with exit
 - [x] help and quit features
 - [ ] makefile
   - [x] temp version

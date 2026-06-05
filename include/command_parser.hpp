@@ -5,6 +5,9 @@
 #include <map>
 #include <optional>
 #include <string_view>
+#include <cctype>      // for isspace
+#include <vector>
+#include <string>
 
 /**
  * @brief Result of parsing a single command.

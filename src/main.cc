@@ -1,4 +1,4 @@
-#include "debugger.cc"
+#include "debugger.hpp"
 #include <CLI/CLI.hpp>
 #include <cstdlib>
 
